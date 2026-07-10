@@ -117,10 +117,10 @@ if (serviceIds.length === 0) {
 };
 
  return (
-    <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl p-8">
-      <h2 className="text-3xl font-bold mb-8">
-        EZ LIFE Registration
-      </h2>
+    <div className="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 text-white">
+      <h2 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-violet-400 to-purple-600 bg-clip-text text-transparent">
+  EZ LIFE Registration
+</h2>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -128,7 +128,7 @@ if (serviceIds.length === 0) {
       >
         {/* Full Name */}
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
             Full Name
           </label>
 
@@ -136,7 +136,7 @@ if (serviceIds.length === 0) {
             {...register("full_name")}
             type="text"
             placeholder="Enter your full name"
-            className="w-full border rounded-xl p-3"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
           />
 
           {errors.full_name && (
@@ -148,7 +148,7 @@ if (serviceIds.length === 0) {
 
         {/* Mobile */}
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
             Mobile Number
           </label>
 
@@ -157,7 +157,7 @@ if (serviceIds.length === 0) {
             type="text"
             maxLength={11}
             placeholder="03XXXXXXXXX"
-            className="w-full border rounded-xl p-3"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
           />
         </div>
 
@@ -190,13 +190,13 @@ if (serviceIds.length === 0) {
             type="text"
             maxLength={11}
             placeholder="03XXXXXXXXX"
-            className="w-full border rounded-xl p-3"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
           />
         </div>
 
         {/* Email */}
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
             Email Address
           </label>
 
@@ -204,19 +204,19 @@ if (serviceIds.length === 0) {
             {...register("email")}
             type="email"
             placeholder="name@email.com"
-            className="w-full border rounded-xl p-3"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
           />
         </div>
 
         {/* City */}
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
             City
           </label>
 
           <select
             {...register("city")}
-            className="w-full border rounded-xl p-3"
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
           >
             <option value="">
               Select City
@@ -235,7 +235,7 @@ if (serviceIds.length === 0) {
 
         {/* Interested Service */}
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
             Interested Service
           </label>
 
@@ -259,7 +259,7 @@ if (serviceIds.length === 0) {
 
         {/* Referral */}
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
             Referral Code
           </label>
 
@@ -292,7 +292,7 @@ if (serviceIds.length === 0) {
         {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-purple-700 hover:bg-purple-800 text-white rounded-xl p-4 font-semibold transition"
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl p-4 font-semibold transition"
         >
           Register Now
         </button>
