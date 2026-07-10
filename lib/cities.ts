@@ -1,0 +1,18 @@
+export const cities = [
+  "Karachi",
+  "Lahore",
+  "Islamabad",
+  "Rawalpindi",
+  "Faisalabad",
+  "Multan",
+  "Peshawar",
+  "Quetta",
+  "Hyderabad",
+  "Sialkot",
+  "Gujranwala",
+  "Bahawalpur",
+  "Sargodha",
+  "Sukkur",
+  "Abbottabad",
+  "Other",
+];
