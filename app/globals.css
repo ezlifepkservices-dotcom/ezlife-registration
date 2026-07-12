@@ -1,26 +1,268 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+
+  --ez-primary: #172b63;
+  --ez-secondary: #6d3bff;
+  --ez-accent: #8c5cff;
+  --ez-dark: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-manrope);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-manrope), var(--font-inter), Arial, sans-serif;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(140, 92, 255, 0.35);
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid #0f172a;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #6d3bff, #172b63);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8c5cff, #6d3bff);
+}
+
+/* Hero entrance animations */
+
+.hero-fade-up {
+  opacity: 0;
+  animation: heroFadeUp 0.8s ease-out forwards;
+}
+
+.hero-fade-in {
+  opacity: 0;
+  animation: heroFadeIn 1s ease-out forwards;
+}
+
+.hero-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.hero-delay-2 {
+  animation-delay: 0.24s;
+}
+
+.hero-delay-3 {
+  animation-delay: 0.36s;
+}
+
+.hero-delay-4 {
+  animation-delay: 0.48s;
+}
+
+.hero-delay-5 {
+  animation-delay: 0.6s;
+}
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Decorative motion */
+
+.hero-orb {
+  animation: heroOrb 9s ease-in-out infinite alternate;
+}
+
+.hero-orb-delayed {
+  animation: heroOrbDelayed 11s ease-in-out infinite alternate;
+}
+
+@keyframes heroOrb {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(40px, 30px, 0) scale(1.12);
+  }
+}
+
+@keyframes heroOrbDelayed {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    transform: translate3d(-40px, 40px, 0) scale(1.15);
+  }
+}
+
+.hero-float {
+  animation: heroFloat 6s ease-in-out infinite;
+}
+
+@keyframes heroFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.hero-service-card {
+  animation: heroServiceFloat 5s ease-in-out infinite;
+}
+
+@keyframes heroServiceFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+.hero-progress {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-progress::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 35%;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.65),
+    transparent
+  );
+  animation: progressShine 3s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    left: -40%;
+  }
+
+  60%,
+  100% {
+    left: 120%;
+  }
+}
+
+.hero-scroll-dot {
+  animation: scrollDot 1.8s ease-in-out infinite;
+}
+
+@keyframes scrollDot {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(13px);
+  }
+}
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
 }

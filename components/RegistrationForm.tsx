@@ -1,301 +1,620 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import {
-  registrationSchema,
-  RegistrationForm,
-} from "@/lib/validation";
+  Building2,
+  CheckCircle2,
+  LoaderCircle,
+  Mail,
+  MapPin,
+  Phone,
+  Send,
+  Smartphone,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { cities } from "@/lib/cities";
 import { services } from "@/lib/services";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import {
+  registrationSchema,
+  type RegistrationForm,
+} from "@/lib/validation";
 
 export default function RegistrationFormComponent() {
   const [sameAsMobile, setSameAsMobile] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<RegistrationForm>({
     resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      full_name: "",
+      mobile: "",
+      whatsapp: "",
+      email: "",
+      city: "",
+      interested_service: [],
+      referral_code: "",
+      consent: false,
+    },
   });
 
   const mobile = watch("mobile");
 
-const onSubmit = async (data: RegistrationForm) => {
-  try {
-    // Check Referral Code
-    const { data: member } = await supabase
-      .from("members")
-      .select("id")
-      .eq("referral_code", data.referral_code.toUpperCase())
-      .maybeSingle();
+  useEffect(() => {
+    if (sameAsMobile) {
+      setValue("whatsapp", mobile ?? "", {
+        shouldValidate: true,
+      });
+    }
+  }, [mobile, sameAsMobile, setValue]);
 
-    if (!member) {
-      toast.error("Invalid Referral Code");
+  const rollbackRegistration = async (registrationId: string) => {
+    await supabase
+      .from("registration_services")
+      .delete()
+      .eq("registration_id", registrationId);
+
+    await supabase
+      .from("registrations")
+      .delete()
+      .eq("id", registrationId);
+  };
+
+  const onSubmit = async (data: RegistrationForm) => {
+    if (isSubmitting) {
       return;
     }
 
-    // Save Registration
-    const { data: registration, error: registrationError } =
-      await supabase
-        .from("registrations")
-        .insert({
-          full_name: data.full_name,
-          mobile: data.mobile,
-          whatsapp: data.whatsapp,
-          email: data.email,
-          city: data.city,
-          referred_by: data.referral_code.toUpperCase(),
-          status: "Pending",
-        })
-        .select()
-        .single();
+    setIsSubmitting(true);
+    setIsSubmitted(false);
 
-    if (registrationError) {
-      toast.error(registrationError.message);
-      return;
-    }
+    let registrationId: string | null = null;
 
+    try {
+      const referralCode = data.referral_code.trim().toUpperCase();
+      const normalizedEmail = data.email.trim().toLowerCase();
 
-    // Get IDs for selected services
-    const serviceIds: string[] = [];
+      const selectedServices = data.interested_service.filter((service) =>
+        service.trim().toLowerCase().includes("umrah"),
+      );
 
-    for (const serviceName of data.interested_service) {
-      const { data: service, error: serviceError } = await supabase
-        .from("services")
-        .select("id")
-        .eq("name", serviceName)
-        .single();
-
-
-
-      if (serviceError || !service) {
-        console.error("SERVICE NOT FOUND:", serviceName);
-        continue;
+      if (selectedServices.length === 0) {
+        toast.error("Please select the Umrah service.");
+        return;
       }
 
-      serviceIds.push(service.id);
+      const { data: referringMember, error: referralError } =
+        await supabase
+          .from("members")
+          .select("id")
+          .eq("referral_code", referralCode)
+          .maybeSingle();
+
+      if (referralError) {
+        toast.error(
+          `Referral code verify nahi ho saka: ${referralError.message}`,
+        );
+        return;
+      }
+
+      if (!referringMember) {
+        toast.error("Invalid referral code.");
+        return;
+      }
+
+      const { data: existingRegistration, error: existingError } =
+        await supabase
+          .from("registrations")
+          .select("id, status")
+          .ilike("email", normalizedEmail)
+          .maybeSingle();
+
+      if (existingError) {
+        toast.error(existingError.message);
+        return;
+      }
+
+      if (existingRegistration) {
+        toast.error(
+          `Is email se registration pehle se maujood hai. Status: ${existingRegistration.status}`,
+        );
+        return;
+      }
+
+      const { data: registration, error: registrationError } =
+        await supabase
+          .from("registrations")
+          .insert({
+            full_name: data.full_name.trim(),
+            mobile: data.mobile.trim(),
+            whatsapp: data.whatsapp.trim(),
+            email: normalizedEmail,
+            city: data.city,
+            interested_service: selectedServices.join(", "),
+            referred_by: referralCode,
+            status: "Pending",
+          })
+          .select("id")
+          .single();
+
+      if (registrationError || !registration) {
+        toast.error(
+          registrationError?.message ??
+            "Registration save nahi ho saki.",
+        );
+        return;
+      }
+
+      registrationId = registration.id;
+
+      const { data: serviceRecords, error: serviceError } =
+        await supabase
+          .from("services")
+          .select("id, name")
+          .in("name", selectedServices);
+
+      if (serviceError) {
+        await rollbackRegistration(registration.id);
+
+        toast.error(
+          `Services load nahi ho sakin: ${serviceError.message}`,
+        );
+        return;
+      }
+
+      if (!serviceRecords || serviceRecords.length === 0) {
+        await rollbackRegistration(registration.id);
+
+        toast.error("Umrah service database mein available nahi hai.");
+        return;
+      }
+
+      const serviceLinks = serviceRecords.map((service) => ({
+        registration_id: registration.id,
+        service_id: service.id,
+      }));
+
+      const { error: linkError } = await supabase
+        .from("registration_services")
+        .insert(serviceLinks);
+
+      if (linkError) {
+        await rollbackRegistration(registration.id);
+
+        toast.error(
+          `Selected service save nahi hui: ${linkError.message}`,
+        );
+        return;
+      }
+
+      toast.success(
+        "Registration successfully submit ho gayi. Admin approval ka intezar karein.",
+      );
+
+      setIsSubmitted(true);
+      setSameAsMobile(false);
+
+      reset({
+        full_name: "",
+        mobile: "",
+        whatsapp: "",
+        email: "",
+        city: "",
+        interested_service: [],
+        referral_code: "",
+        consent: false,
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      if (registrationId) {
+        await rollbackRegistration(registrationId);
+      }
+
+      toast.error(
+        "Registration ke dauran unexpected error aa gaya. Dobara try karein.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-if (serviceIds.length === 0) {
-  toast.error("No valid services selected.");
-  return;
-}
+  const inputWithIconClassName =
+    "h-14 w-full rounded-2xl border border-white/10 bg-white/[0.045] pl-12 pr-4 text-white outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-violet-500/10";
 
-    // Insert all links in one go
-    const rows = serviceIds.map((service_id) => ({
-      registration_id: registration.id,
-      service_id,
-    }));
+  const errorClassName = "mt-2 text-sm font-medium text-red-400";
 
+  return (
+    <div className="w-full rounded-[2rem] border border-white/10 bg-[#111C35]/95 p-5 text-white shadow-[0_30px_100px_rgba(2,6,23,0.45)] backdrop-blur-2xl sm:p-8 lg:p-10">
+      <div className="border-b border-white/10 pb-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">
+          Application Form
+        </p>
 
+        <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">
+          EZ Life Registration
+        </h2>
 
-    const { data: linkData, error: linkError } = await supabase
-      .from("registration_services")
-      .insert(rows)
-      .select();
+        <p className="mt-4 max-w-2xl leading-7 text-slate-400">
+          Please enter accurate information. Your application will remain
+          pending until reviewed by the EZ Life administration team.
+        </p>
+      </div>
 
+      {isSubmitted && (
+        <div className="mt-8 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+          <div className="flex items-start gap-3">
+            <CheckCircle2
+              size={22}
+              className="mt-0.5 shrink-0 text-emerald-300"
+            />
 
-    if (linkError) {
-      toast.error("Services save nahi hue: " + linkError.message);
-      return;
-    }
+            <div>
+              <p className="font-black text-emerald-300">
+                Registration Submitted
+              </p>
 
-    toast.success("Registration successful!");
-  } catch (err) {
-    console.error("UNEXPECTED ERROR:", err);
-    toast.error("Kuch ghalat ho gaya. Dobara try karein.");
-  }
-};
-
- return (
-    <div className="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-8 text-white">
-      <h2 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-violet-400 to-purple-600 bg-clip-text text-transparent">
-  EZ LIFE Registration
-</h2>
+              <p className="mt-2 text-sm leading-6 text-emerald-100/75">
+                Your application has been received and is now pending
+                administrative approval.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6"
+        className="mt-8 space-y-7"
       >
-        {/* Full Name */}
         <div>
-          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
+          <label
+            htmlFor="full_name"
+            className="mb-2 block text-sm font-bold text-slate-200"
+          >
             Full Name
           </label>
 
-          <input
-            {...register("full_name")}
-            type="text"
-            placeholder="Enter your full name"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
-          />
+          <div className="relative">
+            <UserRound
+              size={19}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+            />
+
+            <input
+              id="full_name"
+              {...register("full_name")}
+              type="text"
+              placeholder="Enter your full name"
+              autoComplete="name"
+              className={inputWithIconClassName}
+            />
+          </div>
 
           {errors.full_name && (
-            <p className="text-red-500 text-sm mt-1">
-              Enter your full name
+            <p className={errorClassName}>
+              {errors.full_name.message}
             </p>
           )}
         </div>
 
-        {/* Mobile */}
-        <div>
-          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
-            Mobile Number
-          </label>
-
-          <input
-            {...register("mobile")}
-            type="text"
-            maxLength={11}
-            placeholder="03XXXXXXXXX"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
-          />
-        </div>
-
-        {/* WhatsApp */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="font-medium">
-              WhatsApp Number
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <label
+              htmlFor="mobile"
+              className="mb-2 block text-sm font-bold text-slate-200"
+            >
+              Mobile Number
             </label>
 
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={sameAsMobile}
-                onChange={(e) => {
-                  setSameAsMobile(e.target.checked);
-
-                  if (e.target.checked) {
-                    setValue("whatsapp", mobile);
-                  }
-                }}
+            <div className="relative">
+              <Phone
+                size={19}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
               />
 
-              Same as Mobile
-            </label>
+              <input
+                id="mobile"
+                {...register("mobile")}
+                type="tel"
+                inputMode="numeric"
+                maxLength={11}
+                placeholder="03XXXXXXXXX"
+                autoComplete="tel"
+                className={inputWithIconClassName}
+              />
+            </div>
+
+            {errors.mobile && (
+              <p className={errorClassName}>
+                {errors.mobile.message}
+              </p>
+            )}
           </div>
 
-          <input
-            {...register("whatsapp")}
-            type="text"
-            maxLength={11}
-            placeholder="03XXXXXXXXX"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
-          />
+          <div>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <label
+                htmlFor="whatsapp"
+                className="block text-sm font-bold text-slate-200"
+              >
+                WhatsApp Number
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-violet-300">
+                <input
+                  type="checkbox"
+                  checked={sameAsMobile}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+
+                    setSameAsMobile(checked);
+
+                    if (checked) {
+                      setValue("whatsapp", mobile ?? "", {
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
+                  className="h-4 w-4 accent-[#6D3BFF]"
+                />
+
+                Same as mobile
+              </label>
+            </div>
+
+            <div className="relative">
+              <Smartphone
+                size={19}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+              />
+
+              <input
+                id="whatsapp"
+                {...register("whatsapp")}
+                type="tel"
+                inputMode="numeric"
+                maxLength={11}
+                placeholder="03XXXXXXXXX"
+                autoComplete="tel"
+                readOnly={sameAsMobile}
+                className={`${inputWithIconClassName} ${
+                  sameAsMobile ? "cursor-not-allowed opacity-70" : ""
+                }`}
+              />
+            </div>
+
+            {errors.whatsapp && (
+              <p className={errorClassName}>
+                {errors.whatsapp.message}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Email */}
         <div>
-          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-bold text-slate-200"
+          >
             Email Address
           </label>
 
-          <input
-            {...register("email")}
-            type="email"
-            placeholder="name@email.com"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
-          />
+          <div className="relative">
+            <Mail
+              size={19}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+            />
+
+            <input
+              id="email"
+              {...register("email")}
+              type="email"
+              placeholder="name@example.com"
+              autoComplete="email"
+              className={inputWithIconClassName}
+            />
+          </div>
+
+          {errors.email && (
+            <p className={errorClassName}>{errors.email.message}</p>
+          )}
         </div>
 
-        {/* City */}
         <div>
-          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
+          <label
+            htmlFor="city"
+            className="mb-2 block text-sm font-bold text-slate-200"
+          >
             City
           </label>
 
-          <select
-            {...register("city")}
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none"
-          >
-            <option value="">
-              Select City
-            </option>
+          <div className="relative">
+            <MapPin
+              size={19}
+              className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-500"
+            />
 
-            {cities.map((city) => (
-              <option
-                key={city}
-                value={city}
-              >
-                {city}
+            <select
+              id="city"
+              {...register("city")}
+              className={`${inputWithIconClassName} appearance-none`}
+            >
+              <option value="" className="bg-[#111C35]">
+                Select your city
               </option>
-            ))}
-          </select>
-        </div>
 
-        {/* Interested Service */}
-        <div>
-          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
-            Interested Service
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            {services.map((service) => (
-              <label
-                key={service}
-                className="border rounded-xl p-3 flex gap-2 items-center"
-              >
-                <input
-                  type="checkbox"
-                  value={service}
-                  {...register("interested_service")}
-                />
-
-                {service}
-              </label>
-            ))}
+              {cities.map((city) => (
+                <option
+                  key={city}
+                  value={city}
+                  className="bg-[#111C35]"
+                >
+                  {city}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {errors.city && (
+            <p className={errorClassName}>{errors.city.message}</p>
+          )}
         </div>
 
-        {/* Referral */}
         <div>
-          <label className="border border-slate-700 bg-slate-800 rounded-xl p-3 flex gap-2 items-center hover:border-violet-500">
+          <div className="mb-3">
+            <p className="text-sm font-bold text-slate-200">
+              Interested Services
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Currently, only the Umrah service is available for registration.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {services.map((service) => {
+              const isUmrahService = service
+                .trim()
+                .toLowerCase()
+                .includes("umrah");
+
+              return (
+                <label
+                  key={service}
+                  className={`relative flex items-center gap-3 rounded-2xl border p-4 text-sm font-semibold transition ${
+                    isUmrahService
+                      ? "cursor-pointer border-violet-400/30 bg-violet-400/10 text-white hover:border-violet-400/60"
+                      : "cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600 opacity-60"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    value={service}
+                    disabled={!isUmrahService}
+                    {...register("interested_service")}
+                    className="h-4 w-4 shrink-0 accent-[#6D3BFF] disabled:cursor-not-allowed"
+                  />
+
+                  <Building2
+                    size={18}
+                    className={
+                      isUmrahService
+                        ? "shrink-0 text-violet-300"
+                        : "shrink-0 text-slate-600"
+                    }
+                  />
+
+                  <span className="flex-1">{service}</span>
+
+                  {!isUmrahService && (
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Coming Soon
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+
+          {errors.interested_service && (
+            <p className={errorClassName}>
+              {errors.interested_service.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="referral_code"
+            className="mb-2 block text-sm font-bold text-slate-200"
+          >
             Referral Code
           </label>
 
-          <input
-            {...register("referral_code")}
-            type="text"
-            placeholder="Enter Referral Code"
-            className="w-full border rounded-xl p-3 uppercase"
-          />
+          <div className="relative">
+            <UsersRound
+              size={19}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+            />
 
-          <p className="text-xs text-gray-500 mt-2">
-            Please obtain your referral code from the person
-            who referred you or from EZ Life support.
+            <input
+              id="referral_code"
+              {...register("referral_code")}
+              type="text"
+              placeholder="Enter referral code"
+              autoComplete="off"
+              className={`${inputWithIconClassName} uppercase`}
+            />
+          </div>
+
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Obtain your referral code from the person who referred you or
+            contact EZ Life support.
           </p>
+
+          {errors.referral_code && (
+            <p className={errorClassName}>
+              {errors.referral_code.message}
+            </p>
+          )}
         </div>
 
-        {/* Consent */}
-        <label className="flex gap-3 items-start">
-          <input
-            type="checkbox"
-            {...register("consent")}
-          />
+        <div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <input
+              type="checkbox"
+              {...register("consent")}
+              className="mt-1 h-4 w-4 shrink-0 accent-[#6D3BFF]"
+            />
 
-          <span>
-            I confirm that the information provided is
-            accurate.
-          </span>
-        </label>
+            <span className="text-sm leading-6 text-slate-300">
+              I confirm that the information provided is accurate and I
+              understand that my application is subject to administrative
+              review and approval.
+            </span>
+          </label>
 
-        {/* Submit */}
+          {errors.consent && (
+            <p className={errorClassName}>
+              {errors.consent.message}
+            </p>
+          )}
+        </div>
+
         <button
           type="submit"
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl p-4 font-semibold transition"
+          disabled={isSubmitting}
+          className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] px-6 text-base font-black text-white shadow-[0_18px_50px_rgba(109,59,255,0.35)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(109,59,255,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Register Now
+          {isSubmitting ? (
+            <LoaderCircle size={20} className="animate-spin" />
+          ) : (
+            <Send size={19} />
+          )}
+
+          {isSubmitting
+            ? "Submitting Registration..."
+            : "Submit Registration"}
         </button>
+
+        <p className="text-center text-xs leading-5 text-slate-500">
+          Your information will be stored securely and used only for EZ
+          Life membership processing.
+        </p>
       </form>
     </div>
   );
