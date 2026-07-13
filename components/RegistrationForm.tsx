@@ -5,6 +5,7 @@ import {
   Building2,
   CheckCircle2,
   LoaderCircle,
+  LockKeyhole,
   Mail,
   MapPin,
   Phone,
@@ -13,6 +14,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,6 +28,7 @@ import {
 } from "@/lib/validation";
 
 export default function RegistrationFormComponent() {
+  const searchParams = useSearchParams();
   const [sameAsMobile, setSameAsMobile] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -35,6 +38,7 @@ export default function RegistrationFormComponent() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<RegistrationForm>({
@@ -52,6 +56,24 @@ export default function RegistrationFormComponent() {
   });
 
   const mobile = watch("mobile");
+  const referralFromUrl = searchParams.get("ref")?.trim().toUpperCase() ?? "";
+  const defaultReferralCode = referralFromUrl || "EZADMIN";
+
+  useEffect(() => {
+    setValue("referral_code", defaultReferralCode, {
+      shouldValidate: true,
+    });
+  }, [defaultReferralCode, setValue]);
+
+  const ensureReferralCode = () => {
+    const currentReferralCode = getValues("referral_code")?.trim();
+
+    if (!currentReferralCode) {
+      setValue("referral_code", defaultReferralCode, {
+        shouldValidate: true,
+      });
+    }
+  };
 
   useEffect(() => {
     if (sameAsMobile) {
@@ -96,12 +118,12 @@ export default function RegistrationFormComponent() {
         return;
       }
 
-      const { data: referringMember, error: referralError } =
-        await supabase
-          .from("members")
-          .select("id")
-          .eq("referral_code", referralCode)
-          .maybeSingle();
+      const { data: referralMatches, error: referralError } =
+        await supabase.rpc("validate_referral_code", {
+          input_code: referralCode,
+        });
+
+      const referringMember = referralMatches?.[0] ?? null;
 
       if (referralError) {
         toast.error(
@@ -425,6 +447,7 @@ export default function RegistrationFormComponent() {
               type="email"
               placeholder="name@example.com"
               autoComplete="email"
+              onFocus={ensureReferralCode}
               className={inputWithIconClassName}
             />
           </div>
@@ -555,15 +578,22 @@ export default function RegistrationFormComponent() {
               id="referral_code"
               {...register("referral_code")}
               type="text"
-              placeholder="Enter referral code"
+              placeholder="Referral code"
               autoComplete="off"
-              className={`${inputWithIconClassName} uppercase`}
+              readOnly
+              aria-readonly="true"
+              className={`${inputWithIconClassName} cursor-not-allowed uppercase opacity-80`}
+            />
+
+            <LockKeyhole
+              size={18}
+              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-violet-300"
             />
           </div>
 
           <p className="mt-2 text-xs leading-5 text-slate-500">
-            Obtain your referral code from the person who referred you or
-            contact EZ Life support.
+            Referral code is locked. Direct registrations use EZADMIN, while
+            referral links automatically use the referring member&apos;s code.
           </p>
 
           {errors.referral_code && (

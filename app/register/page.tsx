@@ -1,6 +1,21 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowLeft, ShieldCheck, Sparkles } from "lucide-react";
+
 import RegistrationFormComponent from "../../components/RegistrationForm";
+
+function RegistrationFormFallback() {
+  return (
+    <div className="flex min-h-[520px] w-full items-center justify-center rounded-[2rem] border border-white/10 bg-[#111C35]/95 p-8 text-white shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
+      <div className="text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
+        <p className="mt-4 font-semibold text-slate-300">
+          Loading registration form...
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   return (
@@ -10,26 +25,19 @@ export default function RegisterPage() {
         className="pointer-events-none absolute inset-0"
       >
         <div className="absolute -left-40 top-10 h-[430px] w-[430px] rounded-full bg-[#172B63]/55 blur-[140px]" />
-
         <div className="absolute -right-40 bottom-0 h-[460px] w-[460px] rounded-full bg-[#6D3BFF]/25 blur-[150px]" />
-
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-7xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-3"
-          >
+          <Link href="/" className="inline-flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D3BFF] to-[#172B63] text-base font-black text-white">
               EZ
             </div>
 
             <div>
-              <p className="text-xl font-black text-white">
-                EZ Life
-              </p>
+              <p className="text-xl font-black text-white">EZ Life</p>
 
               <p className="text-[9px] uppercase tracking-[0.22em] text-violet-300">
                 Empowering Possibilities
@@ -69,9 +77,9 @@ export default function RegisterPage() {
               </h1>
 
               <p className="mt-5 leading-8 text-violet-100/75">
-                Complete the registration form with accurate information.
-                Your application will be reviewed by the EZ Life
-                administration team.
+                Complete the registration form with accurate information. Your
+                application will be reviewed by the EZ Life administration
+                team.
               </p>
 
               <div className="mt-9 space-y-4">
@@ -110,7 +118,9 @@ export default function RegisterPage() {
           </aside>
 
           <section className="w-full min-w-0">
-            <RegistrationFormComponent />
+            <Suspense fallback={<RegistrationFormFallback />}>
+              <RegistrationFormComponent />
+            </Suspense>
           </section>
         </div>
       </div>

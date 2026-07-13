@@ -18,18 +18,21 @@ type RegistrationRecord = {
   created_at: string;
 };
 
+type ExistingMemberRecord = {
+  id: string;
+  auth_user_id: string | null;
+  full_name: string;
+  email: string;
+  referral_code: string;
+  status: string;
+};
+
 function getEnvironment() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 
-  if (
-    !supabaseUrl ||
-    !supabaseAnonKey ||
-    !serviceRoleKey ||
-    !adminEmail
-  ) {
+  if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
     throw new Error("Required server environment variables are missing.");
   }
 
@@ -37,7 +40,6 @@ function getEnvironment() {
     supabaseUrl,
     supabaseAnonKey,
     serviceRoleKey,
-    adminEmail,
   };
 }
 
@@ -51,58 +53,6 @@ function getAccessToken(request: NextRequest) {
   return authorization.slice("Bearer ".length).trim();
 }
 
-async function verifyAdmin(request: NextRequest) {
-  const {
-    supabaseUrl,
-    supabaseAnonKey,
-    adminEmail,
-  } = getEnvironment();
-
-  const accessToken = getAccessToken(request);
-
-  if (!accessToken) {
-    return {
-      authorized: false as const,
-      message: "Authentication token missing.",
-    };
-  }
-
-  const authClient = createClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
-
-  const {
-    data: { user },
-    error,
-  } = await authClient.auth.getUser(accessToken);
-
-  if (error || !user?.email) {
-    return {
-      authorized: false as const,
-      message: "Invalid or expired admin session.",
-    };
-  }
-
-  if (user.email.trim().toLowerCase() !== adminEmail) {
-    return {
-      authorized: false as const,
-      message: "You are not authorized to access this module.",
-    };
-  }
-
-  return {
-    authorized: true as const,
-    user,
-  };
-}
-
 function createAdminClient() {
   const { supabaseUrl, serviceRoleKey } = getEnvironment();
 
@@ -112,6 +62,74 @@ function createAdminClient() {
       persistSession: false,
     },
   });
+}
+
+async function verifyAdmin(request: NextRequest) {
+  const { supabaseUrl, supabaseAnonKey } = getEnvironment();
+  const accessToken = getAccessToken(request);
+
+  if (!accessToken) {
+    return {
+      authorized: false as const,
+      message: "Authentication token missing.",
+    };
+  }
+
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  const {
+    data: { user },
+    error: userError,
+  } = await authClient.auth.getUser(accessToken);
+
+  if (userError || !user) {
+    return {
+      authorized: false as const,
+      message: "Invalid or expired admin session.",
+    };
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("role, status")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return {
+      authorized: false as const,
+      message: "Admin profile was not found.",
+    };
+  }
+
+  const hasAdminRole =
+    profile.role === "admin" || profile.role === "super_admin";
+
+  if (!hasAdminRole) {
+    return {
+      authorized: false as const,
+      message: "You are not authorized to access this module.",
+    };
+  }
+
+  if (profile.status !== "active") {
+    return {
+      authorized: false as const,
+      message: "Your admin account is not active.",
+    };
+  }
+
+  return {
+    authorized: true as const,
+    user,
+  };
 }
 
 function generateTemporaryPassword() {
@@ -125,14 +143,52 @@ function generateReferralCode() {
     .toUpperCase()}`;
 }
 
+async function createOrUpdateMemberProfile({
+  authUserId,
+  memberId,
+  fullName,
+  email,
+}: {
+  authUserId: string;
+  memberId: string;
+  fullName: string;
+  email: string;
+}) {
+  const supabaseAdmin = createAdminClient();
+
+  const { error } = await supabaseAdmin.from("profiles").upsert(
+    {
+      auth_user_id: authUserId,
+      member_id: memberId,
+      full_name: fullName,
+      email: email.trim().toLowerCase(),
+      role: "member",
+      status: "active",
+      must_change_password: true,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "auth_user_id",
+    },
+  );
+
+  if (error) {
+    throw new Error(`Member profile could not be created: ${error.message}`);
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const adminVerification = await verifyAdmin(request);
 
     if (!adminVerification.authorized) {
       return NextResponse.json(
-        { error: adminVerification.message },
-        { status: 401 },
+        {
+          error: adminVerification.message,
+        },
+        {
+          status: 401,
+        },
       );
     }
 
@@ -143,12 +199,18 @@ export async function GET(request: NextRequest) {
       .select(
         "id, full_name, mobile, whatsapp, email, city, interested_service, referred_by, status, created_at",
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (error) {
       return NextResponse.json(
-        { error: error.message },
-        { status: 500 },
+        {
+          error: error.message,
+        },
+        {
+          status: 500,
+        },
       );
     }
 
@@ -159,8 +221,12 @@ export async function GET(request: NextRequest) {
     console.error("Admin registrations GET error:", error);
 
     return NextResponse.json(
-      { error: "Unable to load registrations." },
-      { status: 500 },
+      {
+        error: "Unable to load registrations.",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }
@@ -168,14 +234,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let createdAuthUserId: string | null = null;
   let createdMemberId: string | null = null;
+  let createdProfile = false;
 
   try {
     const adminVerification = await verifyAdmin(request);
 
     if (!adminVerification.authorized) {
       return NextResponse.json(
-        { error: adminVerification.message },
-        { status: 401 },
+        {
+          error: adminVerification.message,
+        },
+        {
+          status: 401,
+        },
       );
     }
 
@@ -185,8 +256,12 @@ export async function POST(request: NextRequest) {
 
     if (!body.registrationId) {
       return NextResponse.json(
-        { error: "Registration ID is required." },
-        { status: 400 },
+        {
+          error: "Registration ID is required.",
+        },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -203,44 +278,93 @@ export async function POST(request: NextRequest) {
 
     if (registrationError || !registration) {
       return NextResponse.json(
-        { error: "Registration record not found." },
-        { status: 404 },
+        {
+          error: "Registration record not found.",
+        },
+        {
+          status: 404,
+        },
       );
     }
 
     if (registration.status.toLowerCase() === "approved") {
       return NextResponse.json(
-        { error: "This registration is already approved." },
-        { status: 409 },
+        {
+          error: "This registration is already approved.",
+        },
+        {
+          status: 409,
+        },
       );
     }
 
     const normalizedEmail = registration.email.trim().toLowerCase();
 
-    const { data: existingMember } = await supabaseAdmin
-      .from("members")
-      .select("id, referral_code, status")
-      .ilike("email", normalizedEmail)
-      .maybeSingle();
+    const { data: existingMemberData, error: existingMemberError } =
+      await supabaseAdmin
+        .from("members")
+        .select(
+          "id, auth_user_id, full_name, email, referral_code, status",
+        )
+        .ilike("email", normalizedEmail)
+        .maybeSingle<ExistingMemberRecord>();
 
-    if (existingMember) {
-      const { error: statusUpdateError } = await supabaseAdmin
+    if (existingMemberError) {
+      return NextResponse.json(
+        {
+          error: existingMemberError.message,
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    if (existingMemberData) {
+      if (!existingMemberData.auth_user_id) {
+        return NextResponse.json(
+          {
+            error:
+              "Existing member does not have an authentication account. Please contact system administrator.",
+          },
+          {
+            status: 409,
+          },
+        );
+      }
+
+      await createOrUpdateMemberProfile({
+        authUserId: existingMemberData.auth_user_id,
+        memberId: existingMemberData.id,
+        fullName: existingMemberData.full_name,
+        email: existingMemberData.email,
+      });
+
+      const { error: registrationStatusError } = await supabaseAdmin
         .from("registrations")
-        .update({ status: "Approved" })
+        .update({
+          status: "Approved",
+        })
         .eq("id", registration.id);
 
-      if (statusUpdateError) {
+      if (registrationStatusError) {
         return NextResponse.json(
-          { error: statusUpdateError.message },
-          { status: 500 },
+          {
+            error: registrationStatusError.message,
+          },
+          {
+            status: 500,
+          },
         );
       }
 
       return NextResponse.json({
         message: "Existing member registration approved.",
-        memberId: existingMember.id,
-        referralCode: existingMember.referral_code,
-        temporaryPassword: null,
+        memberId: existingMemberData.id,
+        referralCode: existingMemberData.referral_code,
+        credentialsDelivery: "pending",
+        temporaryPassword:
+          process.env.NODE_ENV === "development" ? null : undefined,
       });
     }
 
@@ -265,7 +389,9 @@ export async function POST(request: NextRequest) {
             authError?.message ??
             "Member authentication account could not be created.",
         },
-        { status: 400 },
+        {
+          status: 400,
+        },
       );
     }
 
@@ -295,28 +421,47 @@ export async function POST(request: NextRequest) {
             memberError?.message ??
             "Member database record could not be created.",
         },
-        { status: 500 },
+        {
+          status: 500,
+        },
       );
     }
 
     createdMemberId = member.id;
 
-    const { error: statusUpdateError } = await supabaseAdmin
+    await createOrUpdateMemberProfile({
+      authUserId: authResult.user.id,
+      memberId: member.id,
+      fullName: registration.full_name,
+      email: normalizedEmail,
+    });
+
+    createdProfile = true;
+
+    const { error: registrationStatusError } = await supabaseAdmin
       .from("registrations")
-      .update({ status: "Approved" })
+      .update({
+        status: "Approved",
+      })
       .eq("id", registration.id);
 
-    if (statusUpdateError) {
+    if (registrationStatusError) {
       await supabaseAdmin
-        .from("members")
+        .from("profiles")
         .delete()
-        .eq("id", member.id);
+        .eq("auth_user_id", authResult.user.id);
+
+      await supabaseAdmin.from("members").delete().eq("id", member.id);
 
       await supabaseAdmin.auth.admin.deleteUser(authResult.user.id);
 
       return NextResponse.json(
-        { error: statusUpdateError.message },
-        { status: 500 },
+        {
+          error: registrationStatusError.message,
+        },
+        {
+          status: 500,
+        },
       );
     }
 
@@ -324,13 +469,24 @@ export async function POST(request: NextRequest) {
       message: "Registration approved successfully.",
       memberId: member.id,
       referralCode: member.referral_code,
-      temporaryPassword,
+      credentialsDelivery: "pending",
+      temporaryPassword:
+        process.env.NODE_ENV === "development"
+          ? temporaryPassword
+          : undefined,
     });
   } catch (error) {
     console.error("Admin approval POST error:", error);
 
     try {
       const supabaseAdmin = createAdminClient();
+
+      if (createdProfile && createdAuthUserId) {
+        await supabaseAdmin
+          .from("profiles")
+          .delete()
+          .eq("auth_user_id", createdAuthUserId);
+      }
 
       if (createdMemberId) {
         await supabaseAdmin
@@ -340,17 +496,22 @@ export async function POST(request: NextRequest) {
       }
 
       if (createdAuthUserId) {
-        await supabaseAdmin.auth.admin.deleteUser(
-          createdAuthUserId,
-        );
+        await supabaseAdmin.auth.admin.deleteUser(createdAuthUserId);
       }
     } catch (rollbackError) {
       console.error("Approval rollback error:", rollbackError);
     }
 
     return NextResponse.json(
-      { error: "Registration approval failed." },
-      { status: 500 },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Registration approval failed.",
+      },
+      {
+        status: 500,
+      },
     );
   }
 }
