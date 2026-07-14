@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeft, ShieldCheck, Sparkles } from "lucide-react";
 
@@ -24,8 +24,8 @@ export default function RegisterPage() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
       >
-        <div className="absolute -left-40 top-10 h-[430px] w-[430px] rounded-full bg-[#172B63]/55 blur-[140px]" />
-        <div className="absolute -right-40 bottom-0 h-[460px] w-[460px] rounded-full bg-[#6D3BFF]/25 blur-[150px]" />
+        <div className="absolute -left-40 top-10 hidden h-[430px] w-[430px] rounded-full bg-[#172B63]/55 blur-[140px] sm:block" />
+        <div className="absolute -right-40 bottom-0 hidden h-[460px] w-[460px] rounded-full bg-[#6D3BFF]/25 blur-[150px] sm:block" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
 
@@ -58,12 +58,12 @@ export default function RegisterPage() {
           <aside className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#172B63] via-[#1A2555] to-[#6D3BFF] p-7 shadow-[0_30px_100px_rgba(2,6,23,0.45)] sm:p-9 lg:sticky lg:top-8">
             <div
               aria-hidden="true"
-              className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
+              className="absolute -right-24 -top-24 hidden h-72 w-72 rounded-full bg-white/10 blur-3xl sm:block"
             />
 
             <div
               aria-hidden="true"
-              className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-[#8C5CFF]/30 blur-3xl"
+              className="absolute -bottom-28 -left-20 hidden h-72 w-72 rounded-full bg-[#8C5CFF]/30 blur-3xl sm:block"
             />
 
             <div className="relative">
@@ -111,7 +111,7 @@ export default function RegisterPage() {
                 </p>
 
                 <p className="mt-2 text-lg font-black text-white">
-                  Submitted → Pending Review → Approved
+                  Submitted â†’ Pending Review â†’ Approved
                 </p>
               </div>
             </div>
@@ -127,3 +127,4 @@ export default function RegisterPage() {
     </main>
   );
 }
+

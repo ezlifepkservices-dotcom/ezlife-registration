@@ -1,23 +1,22 @@
 "use client";
 
-import Link from "next/link";
+import { ShieldCheck, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Bell,
-  CalendarDays,
-  CircleDollarSign,
-  FileText,
-  Gift,
-  LayoutDashboard,
-  LogOut,
-  Network,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  Users,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import DashboardStats from "../../../components/member/DashboardStats";
+import InterestedServicesCard from "../../../components/member/InterestedServicesCard";
+import JourneyStatusCard, {
+  type JourneyStep,
+} from "../../../components/member/JourneyStatusCard";
+import MemberHeader from "../../../components/member/MemberHeader";
+import MemberProfileCard from "../../../components/member/MemberProfileCard";
+import MemberSidebar from "../../../components/member/MemberSidebar";
+import NextActionCard from "../../../components/member/NextActionCard";
+import PurchasesCard, {
+  type MemberPurchase,
+} from "../../../components/member/PurchasesCard";
 import { supabase } from "../../../lib/supabase";
 
 type MemberProfile = {
@@ -26,19 +25,68 @@ type MemberProfile = {
   role: string;
   status: string;
   member_id: string | null;
+  must_change_password: boolean;
 };
+
+type MemberRecord = {
+  id: string;
+  full_name: string;
+  email: string;
+  referral_code: string;
+  status: string;
+};
+
+type RegistrationRecord = {
+  status: string;
+  interested_service: string | null;
+};
+
+type KycRecord = {
+  status: string;
+};
+
+type PurchaseRow = {
+  id: string;
+  purchase_code: string;
+  payment_status: string;
+  purchase_status: string;
+  balloting_status: string;
+  services:
+    | { name: string }
+    | { name: string }[]
+    | null;
+};
+
+type DashboardData = {
+  profile: MemberProfile;
+  member: MemberRecord;
+  registration: RegistrationRecord | null;
+  kycStatus: string;
+  purchases: MemberPurchase[];
+  directReferrals: number;
+};
+
+function normalizeServiceName(
+  services: PurchaseRow["services"],
+): string {
+  if (Array.isArray(services)) {
+    return services[0]?.name ?? "Service";
+  }
+
+  return services?.name ?? "Service";
+}
 
 export default function MemberDashboardPage() {
   const router = useRouter();
 
-  const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadMemberProfile() {
+    async function loadDashboard() {
       try {
         const {
           data: { session },
@@ -50,37 +98,132 @@ export default function MemberDashboardPage() {
           return;
         }
 
-        const { data, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("full_name, email, role, status, member_id")
+          .select(
+            "full_name, email, role, status, member_id, must_change_password",
+          )
           .eq("auth_user_id", session.user.id)
-          .single();
+          .single<MemberProfile>();
 
-        if (error || !data) {
+        if (profileError || !profileData) {
           await supabase.auth.signOut();
           router.replace("/member/login");
           return;
         }
 
-        if (data.role !== "member") {
+        if (profileData.role !== "member") {
           await supabase.auth.signOut();
           router.replace("/member/login");
           return;
         }
 
-        if (data.status === "suspended") {
+        if (profileData.status === "suspended") {
           router.replace("/member/suspended");
           return;
         }
 
-        if (data.status !== "active") {
+        if (profileData.status !== "active" || !profileData.member_id) {
           await supabase.auth.signOut();
           router.replace("/member/login");
           return;
         }
 
+        if (profileData.must_change_password) {
+          router.replace("/member/change-password");
+          return;
+        }
+
+        const [
+          memberResult,
+          registrationResult,
+          kycResult,
+          purchaseResult,
+        ] = await Promise.all([
+          supabase
+            .from("members")
+            .select("id, full_name, email, referral_code, status")
+            .eq("id", profileData.member_id)
+            .single<MemberRecord>(),
+
+          supabase
+            .from("registrations")
+            .select("status, interested_service")
+            .ilike("email", profileData.email.trim().toLowerCase())
+            .order("created_at", { ascending: false })
+            .limit(1),
+
+          supabase
+            .from("member_kyc")
+            .select("status")
+            .eq("member_id", profileData.member_id)
+            .limit(1),
+
+          supabase
+            .from("purchases")
+            .select(
+              "id, purchase_code, payment_status, purchase_status, balloting_status, services(name)",
+            )
+            .eq("member_id", profileData.member_id)
+            .order("purchase_date", { ascending: false }),
+        ]);
+
+        if (memberResult.error || !memberResult.data) {
+          throw new Error(
+            memberResult.error?.message ?? "Member record was not found.",
+          );
+        }
+
+        if (registrationResult.error) {
+          throw new Error(registrationResult.error.message);
+        }
+
+        if (kycResult.error) {
+          throw new Error(kycResult.error.message);
+        }
+
+        if (purchaseResult.error) {
+          throw new Error(purchaseResult.error.message);
+        }
+
+        const registration =
+          (registrationResult.data?.[0] as RegistrationRecord | undefined) ??
+          null;
+
+        const kyc =
+          (kycResult.data?.[0] as KycRecord | undefined) ?? null;
+
+        const { count: directReferrals, error: referralCountError } =
+          await supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true })
+            .eq("referred_by", memberResult.data.referral_code)
+            .ilike("status", "approved");
+
+        if (referralCountError) {
+          throw new Error(referralCountError.message);
+        }
+
+        const purchases = ((purchaseResult.data ?? []) as PurchaseRow[]).map(
+          (purchase) => ({
+            id: purchase.id,
+            purchaseCode: purchase.purchase_code,
+            serviceName: normalizeServiceName(purchase.services),
+            paymentStatus: purchase.payment_status,
+            purchaseStatus: purchase.purchase_status,
+            ballotingStatus: purchase.balloting_status,
+          }),
+        );
+
         if (isMounted) {
-          setProfile(data as MemberProfile);
+          setData({
+            profile: profileData,
+            member: memberResult.data,
+            registration,
+            kycStatus: kyc?.status ?? "not_started",
+            purchases,
+            directReferrals: directReferrals ?? 0,
+          });
           setIsLoading(false);
         }
       } catch (error) {
@@ -90,11 +233,15 @@ export default function MemberDashboardPage() {
           setIsLoading(false);
         }
 
-        toast.error("Member dashboard load nahi ho saka.");
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Member dashboard load nahi ho saka.",
+        );
       }
     }
 
-    loadMemberProfile();
+    void loadDashboard();
 
     return () => {
       isMounted = false;
@@ -115,6 +262,169 @@ export default function MemberDashboardPage() {
     }
   }
 
+  const interestedServices = useMemo(() => {
+    const raw = data?.registration?.interested_service ?? "";
+
+    return raw
+      .split(",")
+      .map((service) => service.trim())
+      .filter(Boolean);
+  }, [data]);
+
+  const eligiblePurchases = useMemo(
+    () =>
+      data?.purchases.filter((purchase) =>
+        ["eligible", "entered"].includes(
+          purchase.ballotingStatus.toLowerCase(),
+        ),
+      ).length ?? 0,
+    [data],
+  );
+
+  const journeySteps = useMemo<JourneyStep[]>(() => {
+    if (!data) {
+      return [];
+    }
+
+    const registrationApproved =
+      data.registration?.status.toLowerCase() === "approved";
+    const kycVerified = data.kycStatus === "verified";
+    const kycRejected = data.kycStatus === "rejected";
+    const hasPurchase = data.purchases.length > 0;
+    const hasVerifiedPayment = data.purchases.some((purchase) =>
+      ["paid", "partial"].includes(purchase.paymentStatus.toLowerCase()),
+    );
+    const hasBallotReadyPurchase = data.purchases.some((purchase) =>
+      ["eligible", "entered", "winner", "consumed"].includes(
+        purchase.ballotingStatus.toLowerCase(),
+      ),
+    );
+
+    return [
+      {
+        label: "Registration",
+        detail: registrationApproved
+          ? "Your registration has been approved."
+          : "Registration approval is pending.",
+        status: registrationApproved ? "complete" : "current",
+      },
+      {
+        label: "KYC",
+        detail: kycVerified
+          ? "Your identity has been verified."
+          : kycRejected
+            ? "Your KYC needs correction."
+            : "Complete and submit your KYC.",
+        status: kycVerified
+          ? "complete"
+          : kycRejected
+            ? "rejected"
+            : "current",
+      },
+      {
+        label: "Purchase",
+        detail: hasPurchase
+          ? "Your confirmed purchase is available."
+          : "Select a product after KYC verification.",
+        status: hasPurchase
+          ? "complete"
+          : kycVerified
+            ? "current"
+            : "pending",
+      },
+      {
+        label: "Payment",
+        detail: hasVerifiedPayment
+          ? "Payment has been recorded."
+          : "Upload payment proof for verification.",
+        status: hasVerifiedPayment
+          ? "complete"
+          : hasPurchase
+            ? "current"
+            : "pending",
+      },
+      {
+        label: "Balloting",
+        detail: hasBallotReadyPurchase
+          ? "At least one purchase is ready for balloting."
+          : "Admin will decide product-wise eligibility.",
+        status: hasBallotReadyPurchase
+          ? "complete"
+          : hasVerifiedPayment
+            ? "current"
+            : "pending",
+      },
+    ];
+  }, [data]);
+
+  const nextAction = useMemo(() => {
+    if (!data) {
+      return {
+        title: "Loading",
+        description: "Please wait.",
+        actionLabel: "Continue",
+      };
+    }
+
+    if (data.kycStatus === "rejected") {
+      return {
+        title: "Correct and resubmit your KYC",
+        description:
+          "Admin ne KYC mein correction maangi hai. KYC module complete hone ke baad aap documents update kar sakenge.",
+        actionLabel: "Update KYC",
+      };
+    }
+
+    if (data.kycStatus !== "verified") {
+      return {
+        title: "Complete your KYC",
+        description:
+          "Product purchase aur payment process start karne se pehle identity verification complete karein.",
+        actionLabel: "Start KYC",
+      };
+    }
+
+    if (data.purchases.length === 0) {
+      return {
+        title: "Select a product",
+        description:
+          "KYC verified hai. Ab interested service ke liye product request aur payment upload karein.",
+        actionLabel: "Choose Product",
+      };
+    }
+
+    const pendingPayment = data.purchases.some((purchase) =>
+      ["pending", "partial", "overdue"].includes(
+        purchase.paymentStatus.toLowerCase(),
+      ),
+    );
+
+    if (pendingPayment) {
+      return {
+        title: "Complete payment verification",
+        description:
+          "Payment proof submit karein ya admin verification ka wait karein.",
+        actionLabel: "View Payments",
+      };
+    }
+
+    if (eligiblePurchases === 0) {
+      return {
+        title: "Wait for balloting eligibility",
+        description:
+          "Payment recorded hai. Admin product-specific balloting eligibility review karega.",
+        actionLabel: "View Purchase",
+      };
+    }
+
+    return {
+      title: "You are ready for balloting",
+      description:
+        "Eligible purchase next product-specific ballot mein enter ho sakti hai.",
+      actionLabel: "View Balloting",
+    };
+  }, [data, eligiblePurchases]);
+
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
@@ -130,120 +440,37 @@ export default function MemberDashboardPage() {
           </h1>
 
           <p className="mt-2 text-sm text-slate-400">
-            Please wait while your account is being verified.
+            Please wait while your member journey is being loaded.
           </p>
         </div>
       </main>
     );
   }
 
-  if (!profile) {
+  if (!data) {
     return null;
   }
 
-  const firstName = profile.full_name.split(" ")[0] || "Member";
+  const firstName = data.profile.full_name.split(" ")[0] || "Member";
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-slate-950 p-6 lg:block">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 font-black">
-              EZ
-            </div>
-
-            <div>
-              <p className="font-bold">EZ Life</p>
-              <p className="text-xs text-slate-500">Member Portal</p>
-            </div>
-          </Link>
-
-          <nav className="mt-10 space-y-2">
-            <Link
-              href="/member/dashboard"
-              className="flex items-center gap-3 rounded-2xl bg-indigo-500/15 px-4 py-3 text-sm font-semibold text-indigo-200"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-              Dashboard
-            </Link>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <UserRound className="h-5 w-5" />
-              My Profile
-            </button>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <Network className="h-5 w-5" />
-              My Referrals
-            </button>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <CircleDollarSign className="h-5 w-5" />
-              Payments
-            </button>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <Gift className="h-5 w-5" />
-              Balloting
-            </button>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <FileText className="h-5 w-5" />
-              Documents
-            </button>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <Bell className="h-5 w-5" />
-              Notifications
-            </button>
-
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
-              <Settings className="h-5 w-5" />
-              Settings
-            </button>
-          </nav>
-
-          <div className="mt-10 border-t border-white/10 pt-6">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <LogOut className="h-5 w-5" />
-              {isSigningOut ? "Signing Out..." : "Sign Out"}
-            </button>
-          </div>
-        </aside>
+        <MemberSidebar
+          isSigningOut={isSigningOut}
+          onSignOut={handleSignOut}
+        />
 
         <section className="min-w-0 flex-1">
-          <header className="border-b border-white/10 bg-slate-950/90 px-5 py-4 backdrop-blur sm:px-8">
-            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-slate-500">Member Dashboard</p>
-                <h1 className="text-xl font-bold">
-                  Welcome back, {firstName}
-                </h1>
-              </div>
+          <MemberHeader
+            firstName={firstName}
+            isSigningOut={isSigningOut}
+            onSignOut={handleSignOut}
+          />
 
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition hover:text-white"
-                >
-                  <Bell className="h-5 w-5" />
-                </button>
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-300">
-                  <UserRound className="h-5 w-5" />
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+          <div className="mx-auto max-w-7xl space-y-8 px-5 py-8 sm:px-8">
             <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-indigo-900/40 via-slate-900 to-slate-950 p-6 sm:p-8">
-              <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-violet-500/15 blur-3xl" />
+              <div className="absolute -right-20 -top-24 hidden h-72 w-72 rounded-full bg-violet-500/15 blur-3xl sm:block" />
 
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-300">
@@ -255,176 +482,43 @@ export default function MemberDashboardPage() {
                   Your EZ Life journey starts here.
                 </h2>
 
-                <p className="mt-4 max-w-2xl leading-7 text-slate-400">
-                  Track your referrals, payments, balloting eligibility,
-                  documents and complete member network from this dashboard.
+                <p className="mt-4 max-w-3xl leading-7 text-slate-400">
+                  Registration sirf interest record karti hai. KYC, product
+                  selection, payment verification aur product-wise balloting
+                  ka progress yahan nazar aayega.
                 </p>
               </div>
             </section>
 
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-300">
-                    <Users className="h-5 w-5" />
-                  </div>
+            <JourneyStatusCard steps={journeySteps} />
 
-                  <span className="text-xs text-slate-500">
-                    Direct Members
-                  </span>
-                </div>
+            <DashboardStats
+              directReferrals={data.directReferrals}
+              totalPurchases={data.purchases.length}
+              eligiblePurchases={eligiblePurchases}
+              kycStatus={data.kycStatus}
+            />
 
-                <p className="mt-5 text-3xl font-black">0</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Your direct referrals
-                </p>
-              </div>
+            <section className="grid gap-6 xl:grid-cols-3">
+              <PurchasesCard purchases={data.purchases} />
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
-                    <Network className="h-5 w-5" />
-                  </div>
-
-                  <span className="text-xs text-slate-500">
-                    Total Network
-                  </span>
-                </div>
-
-                <p className="mt-5 text-3xl font-black">0</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  All members under you
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
-                    <CircleDollarSign className="h-5 w-5" />
-                  </div>
-
-                  <span className="text-xs text-slate-500">
-                    Payment Status
-                  </span>
-                </div>
-
-                <p className="mt-5 text-2xl font-black">Pending</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Payment module coming next
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300">
-                    <Gift className="h-5 w-5" />
-                  </div>
-
-                  <span className="text-xs text-slate-500">
-                    Balloting
-                  </span>
-                </div>
-
-                <p className="mt-5 text-2xl font-black">Not Eligible</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Eligibility rules pending
-                </p>
-              </div>
+              <NextActionCard
+                title={nextAction.title}
+                description={nextAction.description}
+                actionLabel={nextAction.actionLabel}
+              />
             </section>
 
-            <section className="mt-8 grid gap-6 xl:grid-cols-3">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 xl:col-span-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold">
-                      Referral Network
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Your direct and indirect member structure
-                    </p>
-                  </div>
+            <section className="grid gap-6 xl:grid-cols-2">
+              <InterestedServicesCard services={interestedServices} />
 
-                  <Network className="h-5 w-5 text-indigo-300" />
-                </div>
-
-                <div className="mt-8 rounded-3xl border border-dashed border-white/10 px-6 py-14 text-center">
-                  <Users className="mx-auto h-10 w-10 text-slate-600" />
-
-                  <h4 className="mt-4 font-semibold">
-                    No referrals available yet
-                  </h4>
-
-                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                    Your referral code, direct members and complete multi-level
-                    network will appear here.
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6">
-                <div>
-                  <h3 className="text-lg font-bold">
-                    Membership Details
-                  </h3>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Basic account information
-                  </p>
-                </div>
-
-                <div className="mt-6 space-y-5">
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-600">
-                      Full Name
-                    </p>
-
-                    <p className="mt-1 font-medium">
-                      {profile.full_name}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-600">
-                      Email
-                    </p>
-
-                    <p className="mt-1 break-all font-medium">
-                      {profile.email}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-600">
-                      Account Status
-                    </p>
-
-                    <p className="mt-1 font-medium capitalize text-emerald-300">
-                      {profile.status}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-600">
-                      Member ID
-                    </p>
-
-                    <p className="mt-1 font-medium">
-                      {profile.member_id ?? "Will be generated"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-slate-600">
-                      Next Payment
-                    </p>
-
-                    <div className="mt-2 flex items-center gap-2 text-slate-400">
-                      <CalendarDays className="h-4 w-4" />
-                      Payment schedule pending
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <MemberProfileCard
+                fullName={data.member.full_name}
+                email={data.member.email}
+                memberId={data.member.id}
+                referralCode={data.member.referral_code}
+                status={data.member.status}
+              />
             </section>
           </div>
         </section>

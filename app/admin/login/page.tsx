@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -107,8 +107,8 @@ export default function AdminLoginPage() {
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="grid min-h-screen lg:grid-cols-2">
         <section className="relative hidden overflow-hidden border-r border-white/10 bg-gradient-to-br from-violet-950 via-slate-950 to-slate-950 p-12 lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute -left-32 top-20 h-96 w-96 rounded-full bg-violet-600/20 blur-3xl" />
-          <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+          <div className="absolute -left-32 top-20 hidden h-96 w-96 rounded-full bg-violet-600/20 blur-3xl sm:block" />
+          <div className="absolute -bottom-32 right-0 hidden h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl sm:block" />
 
           <div className="relative z-10">
             <Link href="/" className="inline-flex items-center gap-3">
@@ -171,7 +171,7 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 shadow-2xl shadow-black/30 backdrop-blur sm:p-8">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 shadow-2xl shadow-black/30 sm:backdrop-blur sm:p-8">
               <div className="mb-8">
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
                   <ShieldCheck className="h-7 w-7" />

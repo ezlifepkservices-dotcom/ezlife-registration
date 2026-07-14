@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
@@ -110,8 +110,8 @@ export default function MemberLoginPage() {
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="grid min-h-screen lg:grid-cols-2">
         <section className="relative hidden overflow-hidden border-r border-white/10 bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-950 p-12 lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute -left-32 top-20 h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl" />
-          <div className="absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+          <div className="absolute -left-32 top-20 hidden h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl sm:block" />
+          <div className="absolute -bottom-32 right-0 hidden h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl sm:block" />
 
           <Link href="/" className="relative z-10 inline-flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-lg font-black">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import {
@@ -55,9 +55,9 @@ export default function LoginPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0F172A] px-5 py-10 text-white sm:px-6">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-40 top-0 h-[430px] w-[430px] rounded-full bg-[#172B63]/60 blur-[140px]" />
+        <div className="absolute -left-40 top-0 hidden h-[430px] w-[430px] rounded-full bg-[#172B63]/60 blur-[140px] sm:block" />
 
-        <div className="absolute -right-40 bottom-0 h-[460px] w-[460px] rounded-full bg-[#6D3BFF]/25 blur-[150px]" />
+        <div className="absolute -right-40 bottom-0 hidden h-[460px] w-[460px] rounded-full bg-[#6D3BFF]/25 blur-[150px] sm:block" />
 
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
@@ -67,7 +67,7 @@ export default function LoginPage() {
           <div className="mx-auto max-w-3xl text-center">
             <Link
               href="/"
-              className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl"
+              className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 sm:backdrop-blur-xl"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D3BFF] to-[#172B63] text-base font-black text-white">
                 EZ
@@ -104,7 +104,7 @@ export default function LoginPage() {
               return (
                 <article
                   key={portal.title}
-                  className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.4)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-white/20 sm:p-8"
+                  className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.4)] sm:backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-white/20 sm:p-8"
                 >
                   <div
                     aria-hidden="true"
@@ -186,3 +186,4 @@ export default function LoginPage() {
     </main>
   );
 }
+
