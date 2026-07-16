@@ -1,3 +1,47 @@
-import {ArrowRight,CircleAlert} from "lucide-react";
-type Props={title:string;description:string;actionLabel?:string};
-export default function NextActionCard({title,description,actionLabel='Continue'}:Props){return <section className="relative overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-600/20 via-indigo-600/10 to-transparent p-6"><div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl"/><div className="relative"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300"><CircleAlert className="h-5 w-5"/></div><p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-violet-300">Next Required Action</p><h3 className="mt-3 text-xl font-black">{title}</h3><p className="mt-3 leading-7 text-slate-400">{description}</p><button type="button" disabled title="Module coming next" className="mt-6 inline-flex min-h-11 cursor-not-allowed items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 font-semibold text-white opacity-50">{actionLabel}<ArrowRight className="h-4 w-4"/></button></div></section>}
+import { ArrowRight, CircleAlert } from "lucide-react";
+
+type Props = {
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  disabled?: boolean;
+};
+
+export default function NextActionCard({
+  title,
+  description,
+  actionLabel = "Continue",
+  onAction,
+  disabled = false,
+}: Props) {
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-600/20 via-indigo-600/10 to-transparent p-6">
+      <div className="absolute -right-20 -top-20 hidden h-56 w-56 rounded-full bg-violet-500/20 blur-3xl sm:block" />
+
+      <div className="relative">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
+          <CircleAlert className="h-5 w-5" />
+        </div>
+
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-violet-300">
+          Next Required Action
+        </p>
+
+        <h3 className="mt-3 text-xl font-black">{title}</h3>
+
+        <p className="mt-3 leading-7 text-slate-400">{description}</p>
+
+        <button
+          type="button"
+          onClick={onAction}
+          disabled={disabled || !onAction}
+          className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {actionLabel}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </section>
+  );
+}

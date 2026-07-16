@@ -255,12 +255,12 @@ export default function RegistrationFormComponent() {
   };
 
   const inputWithIconClassName =
-    "h-14 w-full rounded-2xl border border-white/10 bg-white/[0.045] pl-12 pr-4 text-white outline-none transition placeholder:text-slate-600 focus:border-violet-400/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-violet-500/10";
+    "h-14 w-full rounded-2xl border border-slate-600 bg-[#1E2A44] pl-12 pr-4 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:bg-[#22304D] focus:ring-2 focus:ring-violet-500/20";
 
   const errorClassName = "mt-2 text-sm font-medium text-red-400";
 
   return (
-    <div className="w-full rounded-[2rem] border border-white/10 bg-[#111C35]/95 p-5 text-white shadow-[0_30px_100px_rgba(2,6,23,0.45)] backdrop-blur-2xl sm:p-8 lg:p-10">
+    <div className="w-full rounded-3xl border border-slate-700 bg-[#111C35] p-5 text-white shadow-xl sm:p-8 lg:p-10">
       <div className="border-b border-white/10 pb-8">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">
           Application Form
@@ -520,8 +520,8 @@ export default function RegistrationFormComponent() {
                   key={service}
                   className={`relative flex items-center gap-3 rounded-2xl border p-4 text-sm font-semibold transition ${
                     isUmrahService
-                      ? "cursor-pointer border-violet-400/30 bg-violet-400/10 text-white hover:border-violet-400/60"
-                      : "cursor-not-allowed border-white/5 bg-white/[0.02] text-slate-600 opacity-60"
+                      ? "cursor-pointer border-violet-400/40 bg-[#2A2250] text-white hover:border-violet-400/60"
+                      : "cursor-not-allowed border-slate-800 bg-[#141D30] text-slate-600 opacity-60"
                   }`}
                 >
                   <input
@@ -544,7 +544,7 @@ export default function RegistrationFormComponent() {
                   <span className="flex-1">{service}</span>
 
                   {!isUmrahService && (
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span className="rounded-full border border-slate-700 bg-[#1A253C] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                       Coming Soon
                     </span>
                   )}
@@ -604,7 +604,7 @@ export default function RegistrationFormComponent() {
         </div>
 
         <div>
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-700 bg-[#17233A] p-4">
             <input
               type="checkbox"
               {...register("consent")}
@@ -628,7 +628,7 @@ export default function RegistrationFormComponent() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] px-6 text-base font-black text-white shadow-[0_18px_50px_rgba(109,59,255,0.35)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(109,59,255,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] px-6 text-base font-black text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? (
             <LoaderCircle size={20} className="animate-spin" />

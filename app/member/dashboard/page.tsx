@@ -43,6 +43,7 @@ type RegistrationRecord = {
 
 type KycRecord = {
   status: string;
+  rejection_reason: string | null;
 };
 
 type PurchaseRow = {
@@ -62,6 +63,7 @@ type DashboardData = {
   member: MemberRecord;
   registration: RegistrationRecord | null;
   kycStatus: string;
+  kycRejectionReason: string | null;
   purchases: MemberPurchase[];
   directReferrals: number;
 };
@@ -155,7 +157,7 @@ export default function MemberDashboardPage() {
 
           supabase
             .from("member_kyc")
-            .select("status")
+            .select("status, rejection_reason")
             .eq("member_id", profileData.member_id)
             .limit(1),
 
@@ -221,6 +223,7 @@ export default function MemberDashboardPage() {
             member: memberResult.data,
             registration,
             kycStatus: kyc?.status ?? "not_started",
+            kycRejectionReason: kyc?.rejection_reason ?? null,
             purchases,
             directReferrals: directReferrals ?? 0,
           });
@@ -314,23 +317,30 @@ export default function MemberDashboardPage() {
           ? "Your identity has been verified."
           : kycRejected
             ? "Your KYC needs correction."
-            : "Complete and submit your KYC.",
+            : data.kycStatus === "submitted" ||
+                data.kycStatus === "under_review"
+              ? "Your KYC is under admin review."
+              : "Complete and submit your KYC.",
         status: kycVerified
           ? "complete"
           : kycRejected
             ? "rejected"
             : "current",
+        href: "/member/kyc",
+        clickable: !kycVerified,
       },
       {
         label: "Purchase",
         detail: hasPurchase
-          ? "Your confirmed purchase is available."
+          ? "Your purchase record is available."
           : "Select a product after KYC verification.",
         status: hasPurchase
           ? "complete"
           : kycVerified
             ? "current"
             : "pending",
+        href: "/member/purchases",
+        clickable: kycVerified,
       },
       {
         label: "Payment",
@@ -355,6 +365,68 @@ export default function MemberDashboardPage() {
             : "pending",
       },
     ];
+  }, [data]);
+
+  const accountStage = useMemo(() => {
+    if (!data) {
+      return {
+        label: "Loading",
+        description: "Please wait.",
+        className:
+          "border-slate-400/20 bg-slate-400/10 text-slate-300",
+      };
+    }
+
+    if (data.kycStatus === "rejected") {
+      return {
+        label: "Action Required",
+        description:
+          "Your KYC needs correction before you can continue.",
+        className:
+          "border-rose-400/20 bg-rose-400/10 text-rose-300",
+      };
+    }
+
+    if (
+      data.kycStatus === "submitted" ||
+      data.kycStatus === "under_review"
+    ) {
+      return {
+        label: "KYC Under Review",
+        description:
+          "Your documents have been submitted and are awaiting admin review.",
+        className:
+          "border-amber-400/20 bg-amber-400/10 text-amber-300",
+      };
+    }
+
+    if (data.kycStatus === "verified") {
+      if (data.purchases.length > 0) {
+        return {
+          label: "Membership Active",
+          description:
+            "Your KYC is approved and your member journey is active.",
+          className:
+            "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+        };
+      }
+
+      return {
+        label: "KYC Approved",
+        description:
+          "Your identity is verified. You can proceed to product selection.",
+        className:
+          "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+      };
+    }
+
+    return {
+      label: "Registration Complete",
+      description:
+        "Your registration is approved. Complete KYC to continue.",
+      className:
+        "border-violet-400/20 bg-violet-400/10 text-violet-300",
+    };
   }, [data]);
 
   const nextAction = useMemo(() => {
@@ -473,9 +545,11 @@ export default function MemberDashboardPage() {
               <div className="absolute -right-20 -top-24 hidden h-72 w-72 rounded-full bg-violet-500/15 blur-3xl sm:block" />
 
               <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-300">
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm ${accountStage.className}`}
+                >
                   <ShieldCheck className="h-4 w-4" />
-                  Account Active
+                  {accountStage.label}
                 </div>
 
                 <h2 className="mt-5 text-3xl font-black sm:text-4xl">
@@ -483,14 +557,41 @@ export default function MemberDashboardPage() {
                 </h2>
 
                 <p className="mt-4 max-w-3xl leading-7 text-slate-400">
-                  Registration sirf interest record karti hai. KYC, product
-                  selection, payment verification aur product-wise balloting
-                  ka progress yahan nazar aayega.
+                  {accountStage.description}
                 </p>
               </div>
             </section>
 
-            <JourneyStatusCard steps={journeySteps} />
+            {data.kycStatus === "rejected" && (
+              <section className="rounded-3xl border border-rose-400/20 bg-rose-400/10 p-5">
+                <p className="text-sm font-black uppercase tracking-wider text-rose-300">
+                  Action Required
+                </p>
+                <h3 className="mt-2 text-xl font-black">
+                  Your KYC needs correction
+                </h3>
+                <p className="mt-2 leading-7 text-rose-100/80">
+                  {data.kycRejectionReason ??
+                    "Please open KYC and replace the document requested by admin."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/member/kyc")}
+                  className="mt-4 rounded-xl bg-rose-500 px-5 py-3 font-bold text-white transition hover:bg-rose-400"
+                >
+                  Continue KYC
+                </button>
+              </section>
+            )}
+
+            <JourneyStatusCard
+              steps={journeySteps}
+              onStepClick={(step) => {
+                if (step.href) {
+                  router.push(step.href);
+                }
+              }}
+            />
 
             <DashboardStats
               directReferrals={data.directReferrals}
@@ -506,6 +607,13 @@ export default function MemberDashboardPage() {
                 title={nextAction.title}
                 description={nextAction.description}
                 actionLabel={nextAction.actionLabel}
+                onAction={
+                  data.kycStatus !== "verified"
+                    ? () => router.push("/member/kyc")
+                    : data.purchases.length === 0
+                      ? () => router.push("/member/purchases")
+                      : undefined
+                }
               />
             </section>
 
