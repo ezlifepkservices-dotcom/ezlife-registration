@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -114,13 +114,20 @@ export default function MemberLoginPage() {
           <div className="absolute -left-32 top-20 hidden h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl sm:block" />
           <div className="absolute -bottom-32 right-0 hidden h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl sm:block" />
 
-          <Link href="/" className="relative z-10 inline-flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-lg font-black">
-              EZ
+          <Link href="/" className="relative z-10 inline-flex items-center gap-4">
+            <div className="relative h-20 w-20 shrink-0">
+              <Image
+                src="/ezlife-logo.png"
+                alt="EZ Life logo"
+                fill
+                priority
+                sizes="80px"
+                className="object-contain"
+              />
             </div>
 
             <div>
-              <p className="text-xl font-bold">EZ Life</p>
+              <p className="text-2xl font-bold">EZ Life</p>
               <p className="text-sm text-slate-400">
                 Empowering Possibilities
               </p>
@@ -169,20 +176,20 @@ export default function MemberLoginPage() {
 
         <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
           <div className="w-full max-w-md">
-            <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <div className="mb-8 flex items-center gap-4 lg:hidden">
               <div className="relative h-20 w-20 shrink-0">
-  <Image
-    src="/ezlife-logo.png"
-    alt="EZ Life logo"
-    fill
-    priority
-    sizes="80px"
-    className="object-contain"
-  />
-</div>
+                <Image
+                  src="/ezlife-logo.png"
+                  alt="EZ Life logo"
+                  fill
+                  priority
+                  sizes="80px"
+                  className="object-contain"
+                />
+              </div>
 
               <div>
-                <p className="font-bold">EZ Life</p>
+                <p className="text-lg font-bold">EZ Life</p>
                 <p className="text-xs text-slate-500">Member Portal</p>
               </div>
             </div>
@@ -314,4 +321,3 @@ export default function MemberLoginPage() {
     </main>
   );
 }
-
