@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 const KYC_BUCKET = "kyc-documents";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -11,7 +12,11 @@ const ALLOWED_TYPES = new Set([
   "application/pdf",
 ]);
 
-export type KycDocumentType = "cnic_front" | "cnic_back" | "selfie";
+export type KycDocumentType =
+  | "cnic_front"
+  | "cnic_back"
+  | "passport"
+  | "selfie";
 
 export function validateKycFile(file: File) {
   if (!ALLOWED_TYPES.has(file.type)) {

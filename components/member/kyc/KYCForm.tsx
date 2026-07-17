@@ -37,10 +37,18 @@ type KycRecord = {
   cnic_number: string | null;
   father_or_husband_name: string | null;
   date_of_birth: string | null;
+  passport_number: string | null;
+  passport_expiry_date: string | null;
   residential_address: string | null;
   city: string | null;
   profession: string | null;
   monthly_income: number | null;
+  next_of_kin_name: string | null;
+  next_of_kin_relationship: string | null;
+  next_of_kin_mobile: string | null;
+  next_of_kin_cnic: string | null;
+  next_of_kin_passport_number: string | null;
+  next_of_kin_passport_expiry_date: string | null;
   status: KycStatus;
   rejection_reason: string | null;
 };
@@ -54,9 +62,12 @@ type DocumentRecord = {
   version_no: number;
 };
 
-type KYCFormProps = {
+type Props = {
   member: MemberContext;
 };
+
+const selectColumns =
+  "id, cnic_number, father_or_husband_name, date_of_birth, passport_number, passport_expiry_date, residential_address, city, profession, monthly_income, next_of_kin_name, next_of_kin_relationship, next_of_kin_mobile, next_of_kin_cnic, next_of_kin_passport_number, next_of_kin_passport_expiry_date, status, rejection_reason";
 
 const fieldClass =
   "mt-2 h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 text-white outline-none transition placeholder:text-slate-600 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60";
@@ -64,16 +75,30 @@ const fieldClass =
 const documentLabels: Record<KycDocumentType, string> = {
   cnic_front: "CNIC Front",
   cnic_back: "CNIC Back",
+  passport: "Passport First Page",
   selfie: "Selfie / Profile Photo",
 };
 
 const requiredDocumentTypes: KycDocumentType[] = [
   "cnic_front",
   "cnic_back",
+  "passport",
   "selfie",
 ];
 
-export default function KYCForm({ member }: KYCFormProps) {
+const relationships = [
+  "Father",
+  "Mother",
+  "Husband",
+  "Wife",
+  "Brother",
+  "Sister",
+  "Son",
+  "Daughter",
+  "Other",
+];
+
+export default function KYCForm({ member }: Props) {
   const [kyc, setKyc] = useState<KycRecord | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [files, setFiles] = useState<
@@ -83,10 +108,18 @@ export default function KYCForm({ member }: KYCFormProps) {
     cnic_number: "",
     father_or_husband_name: "",
     date_of_birth: "",
+    passport_number: "",
+    passport_expiry_date: "",
     residential_address: "",
     city: "",
     profession: "",
     monthly_income: "",
+    next_of_kin_name: "",
+    next_of_kin_relationship: "",
+    next_of_kin_mobile: "",
+    next_of_kin_cnic: "",
+    next_of_kin_passport_number: "",
+    next_of_kin_passport_expiry_date: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -97,22 +130,19 @@ export default function KYCForm({ member }: KYCFormProps) {
     setIsLoading(true);
 
     try {
-      const { data: kycRows, error: kycError } = await supabase
+      const { data: rows, error } = await supabase
         .from("member_kyc")
-        .select(
-          "id, cnic_number, father_or_husband_name, date_of_birth, residential_address, city, profession, monthly_income, status, rejection_reason",
-        )
+        .select(selectColumns)
         .eq("member_id", member.memberId)
         .limit(1);
 
-      if (kycError) {
-        throw new Error(kycError.message);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const currentKyc =
-        (kycRows?.[0] as KycRecord | undefined) ?? null;
+      const current = (rows?.[0] as KycRecord | undefined) ?? null;
 
-      if (!currentKyc) {
+      if (!current) {
         setKyc(null);
         setDocuments([]);
         return;
@@ -124,26 +154,35 @@ export default function KYCForm({ member }: KYCFormProps) {
           .select(
             "id, document_type, file_path, status, review_comment, version_no",
           )
-          .eq("kyc_id", currentKyc.id)
+          .eq("kyc_id", current.id)
           .order("created_at", { ascending: false });
 
       if (documentError) {
         throw new Error(documentError.message);
       }
 
-      setKyc(currentKyc);
+      setKyc(current);
       setDocuments((documentRows ?? []) as DocumentRecord[]);
       setForm({
-        cnic_number: currentKyc.cnic_number ?? "",
+        cnic_number: current.cnic_number ?? "",
         father_or_husband_name:
-          currentKyc.father_or_husband_name ?? "",
-        date_of_birth: currentKyc.date_of_birth ?? "",
-        residential_address:
-          currentKyc.residential_address ?? "",
-        city: currentKyc.city ?? "",
-        profession: currentKyc.profession ?? "",
-        monthly_income:
-          currentKyc.monthly_income?.toString() ?? "",
+          current.father_or_husband_name ?? "",
+        date_of_birth: current.date_of_birth ?? "",
+        passport_number: current.passport_number ?? "",
+        passport_expiry_date: current.passport_expiry_date ?? "",
+        residential_address: current.residential_address ?? "",
+        city: current.city ?? "",
+        profession: current.profession ?? "",
+        monthly_income: current.monthly_income?.toString() ?? "",
+        next_of_kin_name: current.next_of_kin_name ?? "",
+        next_of_kin_relationship:
+          current.next_of_kin_relationship ?? "",
+        next_of_kin_mobile: current.next_of_kin_mobile ?? "",
+        next_of_kin_cnic: current.next_of_kin_cnic ?? "",
+        next_of_kin_passport_number:
+          current.next_of_kin_passport_number ?? "",
+        next_of_kin_passport_expiry_date:
+          current.next_of_kin_passport_expiry_date ?? "",
       });
     } catch (error) {
       console.error("KYC load error:", error);
@@ -161,6 +200,7 @@ export default function KYCForm({ member }: KYCFormProps) {
     void loadKyc();
   }, [member.memberId]);
 
+  // Rejected KYC must be editable.
   const isLocked = useMemo(
     () =>
       kyc?.status === "submitted" ||
@@ -171,14 +211,8 @@ export default function KYCForm({ member }: KYCFormProps) {
 
   const isCorrectionMode = kyc?.status === "rejected";
 
-  function updateField(
-    field: keyof typeof form,
-    value: string,
-  ) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+  function updateField(field: keyof typeof form, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   async function saveKycDetails(status: KycStatus) {
@@ -188,6 +222,8 @@ export default function KYCForm({ member }: KYCFormProps) {
       father_or_husband_name:
         form.father_or_husband_name.trim() || null,
       date_of_birth: form.date_of_birth || null,
+      passport_number: form.passport_number.trim() || null,
+      passport_expiry_date: form.passport_expiry_date || null,
       residential_address:
         form.residential_address.trim() || null,
       city: form.city.trim() || null,
@@ -195,40 +231,37 @@ export default function KYCForm({ member }: KYCFormProps) {
       monthly_income: form.monthly_income
         ? Number(form.monthly_income)
         : null,
+      next_of_kin_name:
+        form.next_of_kin_name.trim() || null,
+      next_of_kin_relationship:
+        form.next_of_kin_relationship || null,
+      next_of_kin_mobile:
+        form.next_of_kin_mobile.trim() || null,
+      next_of_kin_cnic:
+        form.next_of_kin_cnic.trim() || null,
+      next_of_kin_passport_number:
+        form.next_of_kin_passport_number.trim() || null,
+      next_of_kin_passport_expiry_date:
+        form.next_of_kin_passport_expiry_date || null,
       status,
       submitted_at:
         status === "submitted" ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
     };
 
-    if (kyc) {
-      const { data, error } = await supabase
-        .from("member_kyc")
-        .update(payload)
-        .eq("id", kyc.id)
-        .select(
-          "id, cnic_number, father_or_husband_name, date_of_birth, residential_address, city, profession, monthly_income, status, rejection_reason",
-        )
-        .single();
+    const query = kyc
+      ? supabase
+          .from("member_kyc")
+          .update(payload)
+          .eq("id", kyc.id)
+      : supabase.from("member_kyc").insert(payload);
 
-      if (error || !data) {
-        throw new Error(error?.message ?? "KYC update failed.");
-      }
-
-      setKyc(data as KycRecord);
-      return data as KycRecord;
-    }
-
-    const { data, error } = await supabase
-      .from("member_kyc")
-      .insert(payload)
-      .select(
-        "id, cnic_number, father_or_husband_name, date_of_birth, residential_address, city, profession, monthly_income, status, rejection_reason",
-      )
+    const { data, error } = await query
+      .select(selectColumns)
       .single();
 
     if (error || !data) {
-      throw new Error(error?.message ?? "KYC create failed.");
+      throw new Error(error?.message ?? "KYC save failed.");
     }
 
     setKyc(data as KycRecord);
@@ -254,11 +287,11 @@ export default function KYCForm({ member }: KYCFormProps) {
         file,
       });
 
-      const currentDocument = documents.find(
+      const existing = documents.find(
         (document) => document.document_type === documentType,
       );
 
-      if (currentDocument) {
+      if (existing) {
         const { error } = await supabase
           .from("kyc_documents")
           .update({
@@ -269,10 +302,10 @@ export default function KYCForm({ member }: KYCFormProps) {
             reviewed_by: null,
             reviewed_at: null,
             resubmitted_at: new Date().toISOString(),
-            version_no: currentDocument.version_no + 1,
+            version_no: existing.version_no + 1,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", currentDocument.id);
+          .eq("id", existing.id);
 
         if (error) {
           throw new Error(error.message);
@@ -324,12 +357,20 @@ export default function KYCForm({ member }: KYCFormProps) {
         form.cnic_number,
         form.father_or_husband_name,
         form.date_of_birth,
+        form.passport_number,
+        form.passport_expiry_date,
         form.residential_address,
         form.city,
+        form.next_of_kin_name,
+        form.next_of_kin_relationship,
+        form.next_of_kin_mobile,
+        form.next_of_kin_cnic,
       ];
 
       if (requiredValues.some((value) => !value.trim())) {
-        toast.error("Please complete all required KYC fields.");
+        toast.error(
+          "Please complete all required personal, passport and next-of-kin fields.",
+        );
         return;
       }
     }
@@ -337,7 +378,7 @@ export default function KYCForm({ member }: KYCFormProps) {
     setIsSaving(true);
 
     try {
-      // Always keep KYC in draft while files are uploading.
+      // Draft first. Submitted only after all uploads succeed.
       const kycRecord = await saveKycDetails("draft");
 
       for (const documentType of requiredDocumentTypes) {
@@ -371,20 +412,19 @@ export default function KYCForm({ member }: KYCFormProps) {
       }
 
       if (isCorrectionMode) {
-        const pendingCorrections = currentDocuments.filter((document) =>
+        const unresolved = currentDocuments.filter((document) =>
           ["resubmit_required", "rejected"].includes(document.status),
         );
 
-        if (pendingCorrections.length > 0) {
+        if (unresolved.length > 0) {
           toast.error(
-            "Please replace all documents marked for resubmission.",
+            "Please replace every document marked for resubmission.",
           );
           return;
         }
       }
 
-      // Set submitted only after all documents are safely saved.
-      const { data: submittedKyc, error: submitError } = await supabase
+      const { data, error } = await supabase
         .from("member_kyc")
         .update({
           status: "submitted",
@@ -393,18 +433,14 @@ export default function KYCForm({ member }: KYCFormProps) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", kycRecord.id)
-        .select(
-          "id, cnic_number, father_or_husband_name, date_of_birth, residential_address, city, profession, monthly_income, status, rejection_reason",
-        )
+        .select(selectColumns)
         .single();
 
-      if (submitError || !submittedKyc) {
-        throw new Error(
-          submitError?.message ?? "KYC submit failed.",
-        );
+      if (error || !data) {
+        throw new Error(error?.message ?? "KYC submit failed.");
       }
 
-      setKyc(submittedKyc as KycRecord);
+      setKyc(data as KycRecord);
       setFiles({});
       toast.success("KYC submitted for admin review.");
     } catch (error) {
@@ -423,9 +459,7 @@ export default function KYCForm({ member }: KYCFormProps) {
     return (
       <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center">
         <LoaderCircle className="mx-auto h-8 w-8 animate-spin text-violet-300" />
-        <p className="mt-4 text-slate-400">
-          Loading your KYC...
-        </p>
+        <p className="mt-4 text-slate-400">Loading your KYC...</p>
       </div>
     );
   }
@@ -437,14 +471,11 @@ export default function KYCForm({ member }: KYCFormProps) {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-300">
             Member Verification
           </p>
-
           <h1 className="mt-3 text-3xl font-black">
             Complete Your KYC
           </h1>
-
           <p className="mt-3 max-w-2xl leading-7 text-slate-400">
-            Save as draft anytime. Submit only after all required details
-            and documents are complete.
+            Complete personal, passport and next-of-kin information.
           </p>
         </div>
 
@@ -457,8 +488,8 @@ export default function KYCForm({ member }: KYCFormProps) {
         <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
           <p className="font-black">Action Required</p>
           <p className="mt-2 leading-6">
-            Replace only the documents marked for resubmission, then submit
-            your KYC again.
+            Your form is unlocked. Correct the information or replace the
+            requested documents, then resubmit.
           </p>
         </div>
       )}
@@ -469,10 +500,10 @@ export default function KYCForm({ member }: KYCFormProps) {
         </div>
       )}
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
+      <SectionTitle title="Personal Information" />
+      <div className="mt-5 grid gap-6 md:grid-cols-2">
         <ReadOnlyField label="Full Name" value={member.fullName} />
         <ReadOnlyField label="Email" value={member.email} />
-
         <TextField
           label="CNIC Number *"
           value={form.cnic_number}
@@ -480,7 +511,6 @@ export default function KYCForm({ member }: KYCFormProps) {
           placeholder="42101-1234567-1"
           disabled={isLocked}
         />
-
         <TextField
           label="Father / Husband Name *"
           value={form.father_or_husband_name}
@@ -490,7 +520,6 @@ export default function KYCForm({ member }: KYCFormProps) {
           placeholder="Enter full name"
           disabled={isLocked}
         />
-
         <TextField
           label="Date of Birth *"
           value={form.date_of_birth}
@@ -498,7 +527,6 @@ export default function KYCForm({ member }: KYCFormProps) {
           type="date"
           disabled={isLocked}
         />
-
         <TextField
           label="City *"
           value={form.city}
@@ -506,7 +534,6 @@ export default function KYCForm({ member }: KYCFormProps) {
           placeholder="Karachi"
           disabled={isLocked}
         />
-
         <TextField
           label="Profession"
           value={form.profession}
@@ -514,7 +541,6 @@ export default function KYCForm({ member }: KYCFormProps) {
           placeholder="Profession"
           disabled={isLocked}
         />
-
         <TextField
           label="Monthly Income"
           value={form.monthly_income}
@@ -529,7 +555,6 @@ export default function KYCForm({ member }: KYCFormProps) {
         <label className="text-sm font-bold text-slate-200">
           Residential Address *
         </label>
-
         <textarea
           value={form.residential_address}
           onChange={(event) =>
@@ -542,49 +567,143 @@ export default function KYCForm({ member }: KYCFormProps) {
         />
       </div>
 
-      <div className="mt-10">
-        <h2 className="text-xl font-black">KYC Documents</h2>
+      <SectionTitle title="Passport Information" />
+      <div className="mt-5 grid gap-6 md:grid-cols-2">
+        <TextField
+          label="Passport Number *"
+          value={form.passport_number}
+          onChange={(value) => updateField("passport_number", value)}
+          placeholder="AB1234567"
+          disabled={isLocked}
+        />
+        <TextField
+          label="Passport Expiry Date *"
+          value={form.passport_expiry_date}
+          onChange={(value) =>
+            updateField("passport_expiry_date", value)
+          }
+          type="date"
+          disabled={isLocked}
+        />
+      </div>
 
-        <p className="mt-2 text-sm text-slate-500">
-          JPG, PNG, WEBP or PDF. Maximum file size 5 MB.
-        </p>
+      <SectionTitle title="Emergency Contact / Next of Kin" />
+      <div className="mt-5 grid gap-6 md:grid-cols-2">
+        <TextField
+          label="Full Name *"
+          value={form.next_of_kin_name}
+          onChange={(value) =>
+            updateField("next_of_kin_name", value)
+          }
+          placeholder="Next of kin full name"
+          disabled={isLocked}
+        />
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          {requiredDocumentTypes.map((documentType) => {
-            const existing = documents.find(
-              (document) =>
-                document.document_type === documentType,
-            );
-
-            const canReplace =
-              !isLocked &&
-              (!existing ||
-                existing.status === "resubmit_required" ||
-                existing.status === "rejected" ||
-                existing.status === "pending");
-
-            return (
-              <DocumentPicker
-                key={documentType}
-                label={documentLabels[documentType]}
-                file={files[documentType]}
-                document={existing}
-                disabled={
-                  !canReplace ||
-                  existing?.status === "approved" ||
-                  uploadingType === documentType
-                }
-                isUploading={uploadingType === documentType}
-                onChange={(file) =>
-                  setFiles((current) => ({
-                    ...current,
-                    [documentType]: file,
-                  }))
-                }
-              />
-            );
-          })}
+        <div>
+          <label className="text-sm font-bold text-slate-200">
+            Relationship *
+          </label>
+          <select
+            value={form.next_of_kin_relationship}
+            onChange={(event) =>
+              updateField(
+                "next_of_kin_relationship",
+                event.target.value,
+              )
+            }
+            disabled={isLocked}
+            className={fieldClass}
+          >
+            <option value="">Select relationship</option>
+            {relationships.map((relationship) => (
+              <option key={relationship} value={relationship}>
+                {relationship}
+              </option>
+            ))}
+          </select>
         </div>
+
+        <TextField
+          label="Mobile Number *"
+          value={form.next_of_kin_mobile}
+          onChange={(value) =>
+            updateField("next_of_kin_mobile", value)
+          }
+          placeholder="03XXXXXXXXX"
+          disabled={isLocked}
+        />
+        <TextField
+          label="CNIC Number *"
+          value={form.next_of_kin_cnic}
+          onChange={(value) =>
+            updateField("next_of_kin_cnic", value)
+          }
+          placeholder="42101-1234567-1"
+          disabled={isLocked}
+        />
+        <TextField
+          label="Passport Number"
+          value={form.next_of_kin_passport_number}
+          onChange={(value) =>
+            updateField("next_of_kin_passport_number", value)
+          }
+          placeholder="Optional"
+          disabled={isLocked}
+        />
+        <TextField
+          label="Passport Expiry Date"
+          value={form.next_of_kin_passport_expiry_date}
+          onChange={(value) =>
+            updateField(
+              "next_of_kin_passport_expiry_date",
+              value,
+            )
+          }
+          type="date"
+          disabled={isLocked}
+        />
+      </div>
+
+      <SectionTitle title="KYC Documents" />
+      <p className="mt-2 text-sm text-slate-500">
+        JPG, PNG, WEBP or PDF. Maximum file size 5 MB.
+      </p>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {requiredDocumentTypes.map((documentType) => {
+          const existing = documents.find(
+            (document) =>
+              document.document_type === documentType,
+          );
+
+          // On rejected KYC, every document may be replaced.
+          const canReplace =
+            !isLocked &&
+            (isCorrectionMode ||
+              !existing ||
+              existing.status === "pending" ||
+              existing.status === "resubmit_required" ||
+              existing.status === "rejected");
+
+          return (
+            <DocumentPicker
+              key={documentType}
+              label={documentLabels[documentType]}
+              file={files[documentType]}
+              document={existing}
+              disabled={
+                !canReplace || uploadingType === documentType
+              }
+              isUploading={uploadingType === documentType}
+              onChange={(file) =>
+                setFiles((current) => ({
+                  ...current,
+                  [documentType]: file,
+                }))
+              }
+            />
+          );
+        })}
       </div>
 
       <div className="mt-8 flex flex-col gap-3 border-t border-slate-800 pt-6 sm:flex-row sm:justify-end">
@@ -620,6 +739,14 @@ export default function KYCForm({ member }: KYCFormProps) {
   );
 }
 
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <div className="mt-10 border-t border-slate-800 pt-7">
+      <h2 className="text-xl font-black">{title}</h2>
+    </div>
+  );
+}
+
 function ReadOnlyField({
   label,
   value,
@@ -632,7 +759,6 @@ function ReadOnlyField({
       <label className="text-sm font-bold text-slate-200">
         {label}
       </label>
-
       <div className={`${fieldClass} flex items-center text-slate-400`}>
         {value}
       </div>
@@ -660,7 +786,6 @@ function TextField({
       <label className="text-sm font-bold text-slate-200">
         {label}
       </label>
-
       <input
         type={type}
         value={value}
@@ -693,12 +818,10 @@ function DocumentPicker({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-bold">{label}</h3>
-
           <p className="mt-1 text-xs capitalize text-slate-500">
             Status:{" "}
             {document?.status?.replaceAll("_", " ") ?? "not uploaded"}
           </p>
-
           {document && (
             <p className="mt-1 text-xs text-slate-600">
               Version {document.version_no}
@@ -745,11 +868,9 @@ function DocumentPicker({
 
           <p className="mt-2 text-sm font-semibold text-slate-300">
             {file?.name ??
-              (document?.status === "approved"
-                ? "Approved and locked"
-                : document
-                  ? "Choose replacement file"
-                  : "Choose file")}
+              (document
+                ? "Choose replacement file"
+                : "Choose file")}
           </p>
         </div>
       </label>

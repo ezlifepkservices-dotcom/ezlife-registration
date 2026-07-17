@@ -36,6 +36,14 @@ type KycRow = {
   city: string | null;
   profession: string | null;
   monthly_income: number | null;
+  passport_number: string | null;
+  passport_expiry_date: string | null;
+  next_of_kin_name: string | null;
+  next_of_kin_relationship: string | null;
+  next_of_kin_mobile: string | null;
+  next_of_kin_cnic: string | null;
+  next_of_kin_passport_number: string | null;
+  next_of_kin_passport_expiry_date: string | null;
   status: KycStatus;
   rejection_reason: string | null;
   submitted_at: string | null;
@@ -50,7 +58,7 @@ type MemberRow = {
   referral_code: string;
 };
 
-type DocumentType = "cnic_front" | "cnic_back" | "selfie";
+type DocumentType = "cnic_front" | "cnic_back" | "passport" | "selfie";
 
 type DocumentRow = {
   id: string;
@@ -83,6 +91,7 @@ type ReviewRecord = {
 const documentLabels: Record<DocumentType, string> = {
   cnic_front: "CNIC Front",
   cnic_back: "CNIC Back",
+  passport: "Passport First Page",
   selfie: "Selfie",
 };
 
@@ -128,7 +137,7 @@ export default function AdminKycPage() {
       const { data: kycRows, error: kycError } = await supabase
         .from("member_kyc")
         .select(
-          "id, member_id, cnic_number, father_or_husband_name, date_of_birth, residential_address, city, profession, monthly_income, status, rejection_reason, submitted_at, reviewed_at",
+          "id, member_id, cnic_number, father_or_husband_name, date_of_birth, passport_number, passport_expiry_date, residential_address, city, profession, monthly_income, next_of_kin_name, next_of_kin_relationship, next_of_kin_mobile, next_of_kin_cnic, next_of_kin_passport_number, next_of_kin_passport_expiry_date, status, rejection_reason, submitted_at, reviewed_at",
         )
         .in("status", ["submitted", "under_review", "rejected", "verified"])
         .order("submitted_at", { ascending: false });
@@ -287,11 +296,11 @@ export default function AdminKycPage() {
     if (!selected) return;
 
     const allApproved =
-      selected.documents.length === 3 &&
+      selected.documents.length === 4 &&
       selected.documents.every((document) => document.status === "approved");
 
     if (status === "verified" && !allApproved) {
-      toast.error("All three documents must be approved first.");
+      toast.error("All four documents must be approved first.");
       return;
     }
 
@@ -315,6 +324,24 @@ export default function AdminKycPage() {
               )
               .join(" | ") || "KYC requires correction."
           : null;
+
+      if (status === "rejected") {
+        const { error: documentReturnError } = await supabase
+          .from("kyc_documents")
+          .update({
+            status: "resubmit_required",
+            review_comment:
+              rejectionReason || "KYC requires correction. Please review and resubmit.",
+            reviewed_by: userData.user?.id ?? null,
+            reviewed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("kyc_id", selected.kyc.id);
+
+        if (documentReturnError) {
+          throw new Error(documentReturnError.message);
+        }
+      }
 
       const { error } = await supabase
         .from("member_kyc")
@@ -484,7 +511,7 @@ export default function AdminKycPage() {
                 </section>
 
                 <section className="grid gap-5 lg:grid-cols-3">
-                  {(["cnic_front", "cnic_back", "selfie"] as DocumentType[]).map(
+                  {(["cnic_front", "cnic_back", "passport", "selfie"] as DocumentType[]).map(
                     (documentType) => {
                       const document = selected.documents.find(
                         (item) => item.document_type === documentType,
