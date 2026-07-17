@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -7,6 +7,7 @@ import {
   CircleDollarSign,
   FileText,
   Gift,
+  Headphones,
   LayoutDashboard,
   LogOut,
   Network,
@@ -20,13 +21,14 @@ type Props = {
 };
 
 const items = [
-  ["My Profile", UserRound],
-  ["My Referrals", Network],
-  ["Payments", CircleDollarSign],
-  ["Balloting", Gift],
-  ["Documents", FileText],
-  ["Notifications", Bell],
-  ["Settings", Settings],
+  ["My Profile", UserRound, null],
+  ["My Referrals", Network, null],
+  ["Payments", CircleDollarSign, null],
+  ["Balloting", Gift, null],
+  ["Documents", FileText, null],
+  ["Notifications", Bell, null],
+  ["Technical Support", Headphones, "/member/support"],
+  ["Settings", Settings, null],
 ] as const;
 
 export default function MemberSidebar({
@@ -62,19 +64,30 @@ export default function MemberSidebar({
           Dashboard
         </Link>
 
-        {items.map(([label, Icon]) => (
-          <button
-            key={label}
-            type="button"
-            disabled
-            title="Coming soon"
-            className="flex w-full cursor-not-allowed items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-600"
-          >
-            <Icon className="h-5 w-5" />
-            <span className="flex-1">{label}</span>
-            <span className="text-[10px] uppercase">Soon</span>
-          </button>
-        ))}
+        {items.map(([label, Icon, href]) =>
+          href ? (
+            <Link
+              key={label}
+              href={href}
+              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+            >
+              <Icon className="h-5 w-5" />
+              <span className="flex-1">{label}</span>
+            </Link>
+          ) : (
+            <button
+              key={label}
+              type="button"
+              disabled
+              title="Coming soon"
+              className="flex w-full cursor-not-allowed items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-slate-600"
+            >
+              <Icon className="h-5 w-5" />
+              <span className="flex-1">{label}</span>
+              <span className="text-[10px] uppercase">Soon</span>
+            </button>
+          ),
+        )}
       </nav>
 
       <div className="mt-6 border-t border-white/10 pt-4">
