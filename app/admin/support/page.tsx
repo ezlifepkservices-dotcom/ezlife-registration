@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   CheckCircle2,
   Clock3,
   Headphones,
@@ -10,6 +11,7 @@ import {
   Search,
   Send,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -271,7 +273,15 @@ export default function AdminSupportPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <Link
+          href="/admin"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Admin Dashboard
+        </Link>
+
+        <div className="mt-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-violet-300">
               Administration

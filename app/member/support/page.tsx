@@ -85,6 +85,7 @@ export default function MemberSupportPage() {
   const [memberId, setMemberId] = useState("");
   const [authUserId, setAuthUserId] = useState("");
   const [defaultEmail, setDefaultEmail] = useState("");
+  const [defaultMobile, setDefaultMobile] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -133,13 +134,29 @@ export default function MemberSupportPage() {
         return;
       }
 
+      const { data: memberRecord, error: memberError } = await supabase
+        .from("members")
+        .select("email, mobile, whatsapp")
+        .eq("id", profile.member_id)
+        .single();
+
+      if (memberError) {
+        throw new Error(memberError.message);
+      }
+
+      const memberEmail =
+        memberRecord?.email ?? profile.email ?? session.user.email ?? "";
+      const memberMobile =
+        memberRecord?.mobile ?? memberRecord?.whatsapp ?? "";
+
       setMemberId(profile.member_id);
       setAuthUserId(session.user.id);
-      setDefaultEmail(profile.email ?? session.user.email ?? "");
+      setDefaultEmail(memberEmail);
+      setDefaultMobile(memberMobile);
       setForm((current) => ({
         ...current,
-        contact_email:
-          current.contact_email || profile.email || session.user.email || "",
+        contact_email: current.contact_email || memberEmail,
+        contact_mobile: current.contact_mobile || memberMobile,
       }));
 
       const { data, error } = await supabase
@@ -265,7 +282,7 @@ export default function MemberSupportPage() {
         subject: "",
         description: "",
         contact_email: defaultEmail,
-        contact_mobile: "",
+        contact_mobile: defaultMobile,
         priority: "normal",
       });
       setTicketFile(null);
@@ -421,7 +438,12 @@ export default function MemberSupportPage() {
               </label>
 
               <label>
-                <span className="text-sm font-bold">Email Address *</span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold">Email Address *</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                    Auto-filled
+                  </span>
+                </div>
                 <input
                   type="email"
                   value={form.contact_email}
@@ -437,17 +459,17 @@ export default function MemberSupportPage() {
               </label>
 
               <label>
-                <span className="text-sm font-bold">Mobile Number</span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold">Mobile Number</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                    From Member Record
+                  </span>
+                </div>
                 <input
                   value={form.contact_mobile}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      contact_mobile: event.target.value,
-                    }))
-                  }
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 outline-none focus:border-violet-400"
-                  placeholder="03XXXXXXXXX"
+                  readOnly
+                  className="mt-2 h-12 w-full cursor-not-allowed rounded-xl border border-slate-700 bg-slate-950 px-4 text-slate-400 outline-none"
+                  placeholder="No mobile number found in member record"
                 />
               </label>
 
