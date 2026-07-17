@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,7 +12,6 @@ const navigationItems = [
   { label: "How It Works", href: "#how-it-works" },
   { label: "Contact", href: "#contact" },
 ];
-
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -31,7 +29,6 @@ export default function Navbar() {
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : "";
-
     return () => {
       document.body.style.overflow = "";
     };
@@ -53,15 +50,8 @@ export default function Navbar() {
           onClick={closeMenu}
           className="flex items-center gap-3"
         >
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-cyan-300/50 bg-slate-950 shadow-[0_0_24px_rgba(34,211,238,0.28)]">
-            <Image
-              src="/ezlife-logo.png"
-              alt="EZ Life logo"
-              fill
-              priority
-              sizes="48px"
-              className="object-contain p-0.5"
-            />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D3BFF] to-[#172B63] text-lg font-black text-white">
+            EZ
           </div>
 
           <div>
@@ -102,10 +92,8 @@ export default function Navbar() {
         </div>
 
         <button
-          type="button"
-          onClick={() => setIsMenuOpen((current) => !current)}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="rounded-xl border border-white/10 bg-white/5 p-3 text-white xl:hidden"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="xl:hidden rounded-xl border border-white/10 bg-white/5 p-3 text-white"
         >
           {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -127,7 +115,6 @@ export default function Navbar() {
 
             <Link
               href="/login"
-              onClick={closeMenu}
               className="mt-4 rounded-xl border border-white/10 py-3 text-center text-white"
             >
               Login
@@ -135,7 +122,6 @@ export default function Navbar() {
 
             <Link
               href="/register"
-              onClick={closeMenu}
               className="mt-3 rounded-xl bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] py-3 text-center font-semibold text-white"
             >
               Join EZ Life
