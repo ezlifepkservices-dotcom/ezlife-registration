@@ -1,23 +1,29 @@
+import Link from "next/link";
+
 const services = [
   {
     number: "01",
     title: "Umrah",
     description: "Premium Umrah membership programs.",
+    href: "/services/umrah",
   },
   {
     number: "02",
     title: "Family Tours",
     description: "Family travel opportunities.",
+    href: "/services/family-tours",
   },
   {
     number: "03",
     title: "Home Appliances",
     description: "Easy access to quality home appliances.",
+    href: "/services/home-appliances",
   },
   {
     number: "04",
     title: "Property & Homes",
     description: "Property and home ownership opportunities.",
+    href: "/services/property-homes",
   },
 ];
 
@@ -42,9 +48,10 @@ export default function ServicesSection() {
 
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
           {services.map((service) => (
-            <div
+            <Link
               key={service.title}
-              className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:border-violet-500"
+              href={service.href}
+              className="group rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:border-violet-500"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#6D3BFF] to-[#172B63] text-lg font-black text-white">
                 {service.number}
@@ -57,7 +64,11 @@ export default function ServicesSection() {
               <p className="mt-4 leading-7 text-slate-400">
                 {service.description}
               </p>
-            </div>
+
+              <p className="mt-6 text-sm font-bold text-violet-300 transition group-hover:translate-x-1">
+                View Service →
+              </p>
+            </Link>
           ))}
         </div>
       </div>

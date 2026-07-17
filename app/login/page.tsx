@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -24,8 +25,7 @@ const portalCards = [
       "Track referrals and network",
       "Check payments and balloting",
     ],
-    gradient:
-      "from-violet-600/20 via-indigo-600/10 to-transparent",
+    gradient: "from-violet-600/20 via-indigo-600/10 to-transparent",
     iconClassName: "bg-violet-500/15 text-violet-300",
     buttonClassName:
       "from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500",
@@ -43,8 +43,7 @@ const portalCards = [
       "Manage members and operations",
       "Access reports and controls",
     ],
-    gradient:
-      "from-blue-600/20 via-cyan-600/10 to-transparent",
+    gradient: "from-blue-600/20 via-cyan-600/10 to-transparent",
     iconClassName: "bg-blue-500/15 text-blue-300",
     buttonClassName:
       "from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500",
@@ -56,9 +55,7 @@ export default function LoginPage() {
     <main className="relative min-h-screen overflow-hidden bg-[#0F172A] px-5 py-10 text-white sm:px-6">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute -left-40 top-0 hidden h-[430px] w-[430px] rounded-full bg-[#172B63]/60 blur-[140px] sm:block" />
-
         <div className="absolute -right-40 bottom-0 hidden h-[460px] w-[460px] rounded-full bg-[#6D3BFF]/25 blur-[150px] sm:block" />
-
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:70px_70px]" />
       </div>
 
@@ -67,15 +64,21 @@ export default function LoginPage() {
           <div className="mx-auto max-w-3xl text-center">
             <Link
               href="/"
-              className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 sm:backdrop-blur-xl"
+              className="inline-flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 sm:backdrop-blur-xl"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D3BFF] to-[#172B63] text-base font-black text-white">
-                EZ
+              <div className="relative h-20 w-20 shrink-0">
+                <Image
+                  src="/ezlife-logo.png"
+                  alt="EZ Life logo"
+                  fill
+                  priority
+                  sizes="80px"
+                  className="object-contain"
+                />
               </div>
 
               <div className="text-left">
-                <p className="text-lg font-black text-white">EZ Life</p>
-
+                <p className="text-2xl font-black text-white">EZ Life</p>
                 <p className="text-[9px] uppercase tracking-[0.2em] text-violet-300">
                   Empowering Possibilities
                 </p>
@@ -104,18 +107,13 @@ export default function LoginPage() {
               return (
                 <article
                   key={portal.title}
-                  className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.4)] sm:backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:border-white/20 sm:p-8"
+                  className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.4)] transition duration-300 hover:-translate-y-1 hover:border-white/20 sm:p-8 sm:backdrop-blur-2xl"
                 >
-                  <div
-                    aria-hidden="true"
-                    className={`absolute inset-0 bg-gradient-to-br ${portal.gradient}`}
-                  />
+                  <div aria-hidden="true" className={`absolute inset-0 bg-gradient-to-br ${portal.gradient}`} />
 
                   <div className="relative">
                     <div className="flex items-start justify-between gap-4">
-                      <div
-                        className={`flex h-14 w-14 items-center justify-center rounded-2xl ${portal.iconClassName}`}
-                      >
+                      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${portal.iconClassName}`}>
                         <Icon size={28} />
                       </div>
 
@@ -134,24 +132,14 @@ export default function LoginPage() {
 
                     <div className="mt-6 space-y-3">
                       {portal.features.map((feature) => (
-                        <div
-                          key={feature}
-                          className="flex items-center gap-3 text-sm text-slate-300"
-                        >
-                          <CheckCircle2
-                            size={18}
-                            className="shrink-0 text-emerald-400"
-                          />
-
+                        <div key={feature} className="flex items-center gap-3 text-sm text-slate-300">
+                          <CheckCircle2 size={18} className="shrink-0 text-emerald-400" />
                           <span>{feature}</span>
                         </div>
                       ))}
                     </div>
 
-                    <Link
-                      href={portal.href}
-                      className={`mt-8 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r px-5 font-bold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 ${portal.buttonClassName}`}
-                    >
+                    <Link href={portal.href} className={`mt-8 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r px-5 font-bold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 ${portal.buttonClassName}`}>
                       {portal.buttonText}
                       <ArrowRight size={19} />
                     </Link>
@@ -162,11 +150,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm leading-6 text-slate-400">
-            <ShieldCheck
-              size={20}
-              className="mt-0.5 shrink-0 text-emerald-400"
-            />
-
+            <ShieldCheck size={20} className="mt-0.5 shrink-0 text-emerald-400" />
             <p>
               Member accounts are created after approval. Admin access is
               restricted to authorized EZ Life administrators only.
@@ -174,10 +158,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 text-center">
-            <Link
-              href="/"
-              className="text-sm font-semibold text-slate-500 transition hover:text-white"
-            >
+            <Link href="/" className="text-sm font-semibold text-slate-500 transition hover:text-white">
               Return to homepage
             </Link>
           </div>
@@ -186,4 +167,3 @@ export default function LoginPage() {
     </main>
   );
 }
-

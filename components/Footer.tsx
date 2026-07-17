@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import {
@@ -12,19 +13,24 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D3BFF] to-[#172B63] text-lg font-black text-white">
-                EZ
+            <Link href="/" className="flex items-center gap-4">
+              <div className="relative h-20 w-20 shrink-0">
+                <Image
+                  src="/ezlife-logo.png"
+                  alt="EZ Life logo"
+                  fill
+                  sizes="80px"
+                  className="object-contain"
+                />
               </div>
 
               <div>
                 <h2 className="text-2xl font-black text-white">EZ Life</h2>
-
                 <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300">
                   Empowering Possibilities
                 </p>
               </div>
-            </div>
+            </Link>
 
             <p className="mt-6 max-w-sm leading-7 text-slate-400">
               A modern membership ecosystem connecting individuals and
@@ -36,38 +42,22 @@ export default function Footer() {
             <h3 className="text-lg font-bold text-white">Quick Links</h3>
 
             <div className="mt-6 flex flex-col gap-3">
-              <Link
-                href="/"
-                className="text-slate-400 transition hover:text-white"
-              >
+              <Link href="/" className="text-slate-400 transition hover:text-white">
                 Home
               </Link>
-
-              <Link
-                href="#about"
-                className="text-slate-400 transition hover:text-white"
-              >
+              <Link href="/#about" className="text-slate-400 transition hover:text-white">
                 About
               </Link>
-
-              <Link
-                href="#services"
-                className="text-slate-400 transition hover:text-white"
-              >
+              <Link href="/#why-ez-life" className="text-slate-400 transition hover:text-white">
+                Why EZ Life
+              </Link>
+              <Link href="/#services" className="text-slate-400 transition hover:text-white">
                 Services
               </Link>
-
-              <Link
-                href="#how-it-works"
-                className="text-slate-400 transition hover:text-white"
-              >
+              <Link href="/#how-it-works" className="text-slate-400 transition hover:text-white">
                 How It Works
               </Link>
-
-              <Link
-                href="/register"
-                className="text-slate-400 transition hover:text-white"
-              >
+              <Link href="/register" className="text-slate-400 transition hover:text-white">
                 Registration
               </Link>
             </div>
@@ -103,27 +93,13 @@ export default function Footer() {
             </p>
 
             <div className="mt-6 flex gap-4">
-              <a
-                href="#"
-                aria-label="Facebook"
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#1877F2]/50 hover:bg-[#1877F2]"
-              >
+              <a href="#" aria-label="Facebook" className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#1877F2]/50 hover:bg-[#1877F2]">
                 <FaFacebookF size={19} />
               </a>
-
-              <a
-                href="#"
-                aria-label="Instagram"
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#E4405F]/50 hover:bg-[#E4405F]"
-              >
+              <a href="#" aria-label="Instagram" className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#E4405F]/50 hover:bg-[#E4405F]">
                 <FaInstagram size={20} />
               </a>
-
-              <a
-                href="#"
-                aria-label="LinkedIn"
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#0077B5]/50 hover:bg-[#0077B5]"
-              >
+              <a href="#" aria-label="LinkedIn" className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition duration-300 hover:-translate-y-1 hover:border-[#0077B5]/50 hover:bg-[#0077B5]">
                 <FaLinkedinIn size={19} />
               </a>
             </div>
@@ -137,7 +113,6 @@ export default function Footer() {
             <Link href="#" className="transition hover:text-white">
               Privacy Policy
             </Link>
-
             <Link href="#" className="transition hover:text-white">
               Terms & Conditions
             </Link>
