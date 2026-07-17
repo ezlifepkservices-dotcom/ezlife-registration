@@ -47,25 +47,25 @@ export default function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+      <nav className="mx-auto flex h-28 max-w-7xl items-center justify-between px-6">
         <Link
           href="/"
           onClick={closeMenu}
-          className="flex items-center gap-3"
+          className="flex items-center gap-4"
         >
-          <div className="relative h-12 w-12 shrink-0">
+          <div className="relative h-24 w-24 shrink-0">
             <Image
               src="/ezlife-logo.png"
               alt="EZ Life logo"
               fill
               priority
-              sizes="48px"
+              sizes="96px"
               className="object-contain"
             />
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-white">EZ Life</h2>
+            <h2 className="text-2xl font-bold text-white">EZ Life</h2>
             <p className="text-[10px] uppercase tracking-[0.25em] text-violet-200">
               Empowering Possibilities
             </p>
