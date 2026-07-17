@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -109,16 +109,11 @@ export default function RegistrationFormComponent() {
       const referralCode = data.referral_code.trim().toUpperCase();
       const normalizedEmail = data.email.trim().toLowerCase();
 
-      const selectedServices = data.interested_service
-        .map((service) => service.trim())
-        .filter((service) =>
-          service.toLowerCase().includes("umrah"),
-        );
+      const selectedServices = data.interested_service.filter((service) =>
+        service.trim().toLowerCase().includes("umrah"),
+      );
 
-      const normalizedSelectedServices =
-        selectedServices.length > 0 ? ["Umrah"] : [];
-
-      if (normalizedSelectedServices.length === 0) {
+      if (selectedServices.length === 0) {
         toast.error("Please select the Umrah service.");
         return;
       }
@@ -170,7 +165,7 @@ export default function RegistrationFormComponent() {
             whatsapp: data.whatsapp.trim(),
             email: normalizedEmail,
             city: data.city,
-            interested_service: normalizedSelectedServices.join(", "),
+            interested_service: selectedServices.join(", "),
             referred_by: referralCode,
             status: "Pending",
           })
@@ -191,7 +186,7 @@ export default function RegistrationFormComponent() {
         await supabase
           .from("services")
           .select("id, name")
-          .ilike("name", "%umrah%");
+          .in("name", selectedServices);
 
       if (serviceError) {
         await rollbackRegistration(registration.id);
