@@ -92,6 +92,7 @@ export default function MemberSupportPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [reply, setReply] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
+  const [ticketFile, setTicketFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     category: "technical_error",
     subject: "",
@@ -243,6 +244,8 @@ export default function MemberSupportPage() {
         throw new Error(error?.message ?? "Ticket create nahi hua.");
       }
 
+      const attachmentPath = await uploadAttachment(data.id, ticketFile);
+
       const { error: messageError } = await supabase
         .from("support_ticket_messages")
         .insert({
@@ -250,6 +253,7 @@ export default function MemberSupportPage() {
           sender_type: "member",
           sender_user_id: authUserId,
           message: form.description.trim(),
+          attachment_path: attachmentPath,
         });
 
       if (messageError) throw new Error(messageError.message);
@@ -264,6 +268,7 @@ export default function MemberSupportPage() {
         contact_mobile: "",
         priority: "normal",
       });
+      setTicketFile(null);
 
       await loadPage();
     } catch (error) {
@@ -479,6 +484,23 @@ export default function MemberSupportPage() {
                 />
               </label>
 
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-950 px-4 py-4 text-sm text-slate-400 transition hover:border-violet-400">
+                <Upload className="h-4 w-4" />
+                {ticketFile?.name ?? "Attach Screenshot / Document"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={(event) =>
+                    setTicketFile(event.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+
+              <p className="-mt-2 text-xs text-slate-600">
+                JPG, PNG, WEBP or PDF. Maximum 5 MB.
+              </p>
+
               <button
                 type="submit"
                 disabled={isSaving}
@@ -587,6 +609,28 @@ export default function MemberSupportPage() {
                   <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-300">
                     {message.message}
                   </p>
+
+                  {message.attachment_path && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const { data, error } = await supabase.storage
+                          .from("support-attachments")
+                          .createSignedUrl(message.attachment_path!, 600);
+
+                        if (error || !data?.signedUrl) {
+                          toast.error(error?.message ?? "Attachment open nahi hua.");
+                          return;
+                        }
+
+                        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                      }}
+                      className="mt-3 inline-flex items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-xs font-bold text-violet-200"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      View Attachment
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

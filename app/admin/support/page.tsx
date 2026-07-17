@@ -403,6 +403,32 @@ export default function AdminSupportPage() {
                       <p className="mt-2 whitespace-pre-wrap leading-7 text-slate-300">
                         {message.message}
                       </p>
+
+                      {message.attachment_path && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const { data, error } = await supabase.storage
+                              .from("support-attachments")
+                              .createSignedUrl(message.attachment_path!, 600);
+
+                            if (error || !data?.signedUrl) {
+                              toast.error(error?.message ?? "Attachment open nahi hua.");
+                              return;
+                            }
+
+                            window.open(
+                              data.signedUrl,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }}
+                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-xs font-bold text-violet-200"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          View Attachment
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

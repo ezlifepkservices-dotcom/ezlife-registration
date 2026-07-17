@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bell,
@@ -9,6 +10,7 @@ import {
   FileCheck2,
   FileText,
   Gift,
+  Headphones,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -78,6 +80,11 @@ const menuItems = [
     icon: FileText,
   },
   {
+    label: "Technical Support",
+    href: "/admin/support",
+    icon: Headphones,
+  },
+  {
     label: "Settings",
     href: "/admin/settings",
     icon: Settings,
@@ -85,11 +92,20 @@ const menuItems = [
 ];
 
 export default function AdminSidebar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
   const closeSidebar = () => {
     setIsOpen(false);
   };
+
+  function isActive(href: string) {
+    if (href === "/admin") {
+      return pathname === "/admin";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
     <>
@@ -116,26 +132,25 @@ export default function AdminSidebar() {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
+        <div className="flex h-24 items-center justify-between border-b border-white/10 px-6">
           <Link
             href="/"
             onClick={closeSidebar}
             className="flex items-center gap-3"
           >
             <div className="relative h-16 w-16 shrink-0">
-  <Image
-    src="/ezlife-logo.png"
-    alt="EZ Life logo"
-    fill
-    priority
-    sizes="64px"
-    className="object-contain"
-  />
-</div>
+              <Image
+                src="/ezlife-logo.png"
+                alt="EZ Life logo"
+                fill
+                priority
+                sizes="64px"
+                className="object-contain"
+              />
+            </div>
 
             <div>
               <p className="text-xl font-black text-white">EZ Life</p>
-
               <p className="text-[9px] uppercase tracking-[0.2em] text-violet-300">
                 Admin Portal
               </p>
@@ -160,7 +175,6 @@ export default function AdminSidebar() {
 
             <div className="mt-3 flex items-center gap-3">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-
               <p className="font-bold text-white">Operational</p>
             </div>
 
@@ -176,9 +190,9 @@ export default function AdminSidebar() {
           </p>
 
           <div className="mt-3 space-y-1.5">
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const Icon = item.icon;
-              const isDashboard = index === 0;
+              const active = isActive(item.href);
               const isOverdue = item.href === "/admin/overdue";
 
               return (
@@ -187,7 +201,7 @@ export default function AdminSidebar() {
                   href={item.href}
                   onClick={closeSidebar}
                   className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                    isDashboard
+                    active
                       ? "bg-gradient-to-r from-[#6D3BFF] to-[#172B63] text-white shadow-[0_12px_32px_rgba(109,59,255,0.25)]"
                       : isOverdue
                         ? "text-red-300 hover:bg-red-500/10 hover:text-red-200"
@@ -195,7 +209,6 @@ export default function AdminSidebar() {
                   }`}
                 >
                   <Icon size={19} />
-
                   <span className="flex-1">{item.label}</span>
 
                   {isOverdue && (
