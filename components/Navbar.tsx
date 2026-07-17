@@ -8,8 +8,8 @@ import { useEffect, useState } from "react";
 const navigationItems = [
   { label: "Home", href: "/" },
   { label: "About", href: "#about" },
-  { label: "Services", href: "#services" },
   { label: "Why EZ Life", href: "#why-ez-life" },
+  { label: "Services", href: "#services" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Contact", href: "#contact" },
 ];
@@ -53,14 +53,14 @@ export default function Navbar() {
           onClick={closeMenu}
           className="flex items-center gap-3"
         >
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-cyan-300/50 bg-slate-950 shadow-[0_0_24px_rgba(34,211,238,0.28)]">
+          <div className="relative h-12 w-12 shrink-0">
             <Image
               src="/ezlife-logo.png"
               alt="EZ Life logo"
               fill
               priority
               sizes="48px"
-              className="object-contain p-0.5"
+              className="object-contain"
             />
           </div>
 
