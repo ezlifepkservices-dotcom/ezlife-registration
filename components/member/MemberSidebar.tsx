@@ -23,7 +23,7 @@ type Props = {
 const items = [
   ["My Profile", UserRound, null],
   ["My Referrals", Network, null],
-  ["Payments", CircleDollarSign, null],
+  ["Payments", CircleDollarSign, "/member/payments"],
   ["Balloting", Gift, null],
   ["Documents", FileText, null],
   ["Notifications", Bell, null],

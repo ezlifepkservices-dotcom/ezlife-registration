@@ -294,8 +294,15 @@ export default function MemberDashboardPage() {
     const kycVerified = data.kycStatus === "verified";
     const kycRejected = data.kycStatus === "rejected";
     const hasPurchase = data.purchases.length > 0;
+    const hasApprovedPurchase = data.purchases.some((purchase) =>
+      ["active", "completed"].includes(
+        purchase.purchaseStatus.toLowerCase(),
+      ),
+    );
     const hasVerifiedPayment = data.purchases.some((purchase) =>
-      ["paid", "partial"].includes(purchase.paymentStatus.toLowerCase()),
+      ["verified", "paid", "partial"].includes(
+        purchase.paymentStatus.toLowerCase(),
+      ),
     );
     const hasBallotReadyPurchase = data.purchases.some((purchase) =>
       ["eligible", "entered", "winner", "consumed"].includes(
@@ -331,12 +338,14 @@ export default function MemberDashboardPage() {
       },
       {
         label: "Purchase",
-        detail: hasPurchase
-          ? "Your purchase record is available."
-          : "Select a product after KYC verification.",
-        status: hasPurchase
+        detail: hasApprovedPurchase
+          ? "Your purchase has been approved."
+          : hasPurchase
+            ? "Your purchase request is waiting for admin approval."
+            : "Select a product after KYC verification.",
+        status: hasApprovedPurchase
           ? "complete"
-          : kycVerified
+          : hasPurchase || kycVerified
             ? "current"
             : "pending",
         href: "/member/purchases",
@@ -349,9 +358,11 @@ export default function MemberDashboardPage() {
           : "Upload payment proof for verification.",
         status: hasVerifiedPayment
           ? "complete"
-          : hasPurchase
+          : hasApprovedPurchase
             ? "current"
             : "pending",
+        href: "/member/payments",
+        clickable: hasApprovedPurchase,
       },
       {
         label: "Balloting",
@@ -612,7 +623,13 @@ export default function MemberDashboardPage() {
                     ? () => router.push("/member/kyc")
                     : data.purchases.length === 0
                       ? () => router.push("/member/purchases")
-                      : undefined
+                      : data.purchases.some((purchase) =>
+                          ["active", "completed"].includes(
+                            purchase.purchaseStatus.toLowerCase(),
+                          ),
+                        )
+                        ? () => router.push("/member/payments")
+                        : () => router.push("/member/purchases")
                 }
               />
             </section>
