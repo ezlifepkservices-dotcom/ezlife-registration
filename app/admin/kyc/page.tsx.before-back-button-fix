@@ -1,7 +1,6 @@
-﻿"use client";
+"use client";
 
 import {
-  ArrowLeft,
   CheckCircle2,
   ExternalLink,
   FileWarning,
@@ -13,7 +12,6 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -377,15 +375,7 @@ export default function AdminKycPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <Link
-          href="/admin"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 text-sm font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Admin Dashboard
-        </Link>
-
-        <div className="mt-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-violet-300">
               Admin Review
@@ -490,31 +480,31 @@ export default function AdminKycPage() {
                   </div>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <Info label="Mobile" value={selected.member.mobile ?? "â€”"} />
-                    <Info label="CNIC" value={selected.kyc.cnic_number ?? "â€”"} />
+                    <Info label="Mobile" value={selected.member.mobile ?? "—"} />
+                    <Info label="CNIC" value={selected.kyc.cnic_number ?? "—"} />
                     <Info
                       label="Father / Husband"
-                      value={selected.kyc.father_or_husband_name ?? "â€”"}
+                      value={selected.kyc.father_or_husband_name ?? "—"}
                     />
                     <Info
                       label="Date of Birth"
-                      value={selected.kyc.date_of_birth ?? "â€”"}
+                      value={selected.kyc.date_of_birth ?? "—"}
                     />
-                    <Info label="City" value={selected.kyc.city ?? "â€”"} />
+                    <Info label="City" value={selected.kyc.city ?? "—"} />
                     <Info
                       label="Profession"
-                      value={selected.kyc.profession ?? "â€”"}
+                      value={selected.kyc.profession ?? "—"}
                     />
                     <Info
                       label="Monthly Income"
                       value={
                         selected.kyc.monthly_income?.toLocaleString("en-PK") ??
-                        "â€”"
+                        "—"
                       }
                     />
                     <Info
                       label="Address"
-                      value={selected.kyc.residential_address ?? "â€”"}
+                      value={selected.kyc.residential_address ?? "—"}
                       wide
                     />
                   </div>
@@ -769,5 +759,3 @@ function DocumentStatusIcon({
 
   return <FileWarning className="h-6 w-6 text-slate-500" />;
 }
-
-
