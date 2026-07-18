@@ -24,7 +24,7 @@ const items = [
   ["My Profile", UserRound, null],
   ["My Referrals", Network, null],
   ["Payments", CircleDollarSign, "/member/payments"],
-  ["Balloting", Gift, null],
+  ["Balloting", Gift, "/member/balloting"],
   ["Documents", FileText, null],
   ["Notifications", Bell, null],
   ["Technical Support", Headphones, "/member/support"],
