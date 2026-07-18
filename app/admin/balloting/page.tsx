@@ -6,6 +6,7 @@ import {
   DatabaseZap,
   Gift,
   LoaderCircle,
+  PackagePlus,
   Plus,
   RefreshCcw,
   Save,
@@ -122,7 +123,7 @@ export default function AdminBallotingPage() {
   const [criteria, setCriteria] = useState<CriterionRow[]>([]);
   const [eligibility, setEligibility] = useState<EligibilityRow[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "criteria" | "eligible" | "nearly" | "excluded" | "direct"
+    "criteria" | "eligible" | "nearly" | "excluded" | "target"
   >("criteria");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -255,7 +256,7 @@ export default function AdminBallotingPage() {
       criterion_mode: form.criterion_mode,
       benefit_type: form.benefit_type,
       conditions_mode: "all",
-      min_direct_referrals: Number(form.min_direct_referrals || 0),
+      min_direct_referrals: 0,
       min_verified_payments: Number(form.min_verified_payments || 0),
       min_paid_amount: Number(form.min_paid_amount || 0),
       kyc_required: form.kyc_required,
@@ -349,8 +350,8 @@ export default function AdminBallotingPage() {
       }
 
       if (
-        activeTab === "direct" &&
-        row.qualification_status !== "direct_award"
+        activeTab === "target" &&
+        row.qualification_status !== "target_completed"
       ) {
         return false;
       }
@@ -386,8 +387,8 @@ export default function AdminBallotingPage() {
       excluded: eligibility.filter(
         (row) => row.qualification_status === "not_eligible",
       ).length,
-      direct: eligibility.filter(
-        (row) => row.qualification_status === "direct_award",
+      target: eligibility.filter(
+        (row) => row.qualification_status === "target_completed",
       ).length,
     }),
     [eligibility],
@@ -418,19 +419,29 @@ export default function AdminBallotingPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void refreshEligibility()}
-            disabled={isRefreshing}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 font-black disabled:opacity-50"
-          >
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/admin/packages"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-400/10 px-5 font-black text-violet-200"
+            >
+              <PackagePlus className="h-4 w-4" />
+              Manage Packages
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => void refreshEligibility()}
+              disabled={isRefreshing}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 font-black disabled:opacity-50"
+            >
             {isRefreshing ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
               <DatabaseZap className="h-4 w-4" />
             )}
-            Recalculate Eligibility
-          </button>
+              Recalculate Eligibility
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -451,8 +462,8 @@ export default function AdminBallotingPage() {
               icon: Search,
             },
             {
-              label: "Direct Awards",
-              value: counts.direct,
+              label: "Target Completed",
+              value: counts.target,
               icon: Trophy,
             },
           ].map((item) => {
@@ -477,7 +488,7 @@ export default function AdminBallotingPage() {
             ["eligible", `Eligible (${counts.eligible})`],
             ["nearly", `Nearly Eligible (${counts.nearly})`],
             ["excluded", `Not Eligible (${counts.excluded})`],
-            ["direct", `Direct Awards (${counts.direct})`],
+            ["target", `Target Completed (${counts.target})`],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -489,7 +500,7 @@ export default function AdminBallotingPage() {
                     | "eligible"
                     | "nearly"
                     | "excluded"
-                    | "direct",
+                    | "target",
                 )
               }
               className={`rounded-xl px-4 py-2 text-sm font-bold ${
@@ -607,23 +618,9 @@ export default function AdminBallotingPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label>
-                    <span className="text-sm font-bold">
-                      Minimum Direct Referrals
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.min_direct_referrals}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          min_direct_referrals: event.target.value,
-                        }))
-                      }
-                      className="mt-2 h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-4"
-                    />
-                  </label>
+                  <div className="rounded-xl border border-violet-400/20 bg-violet-400/10 p-4 text-sm text-violet-200">
+                    Referral start and completion targets are managed in the Product / Package Master.
+                  </div>
 
                   <label>
                     <span className="text-sm font-bold">
