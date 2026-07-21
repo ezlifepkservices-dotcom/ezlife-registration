@@ -1,126 +1,19 @@
-import {
-  BadgeCheck,
-  ClipboardCheck,
-  CreditCard,
-  Gift,
-  Trophy,
-  UserPlus,
-} from "lucide-react";
+import { BadgeCheck, CheckCircle2, ListChecks, Target, Trophy } from "lucide-react";
 
-const steps = [
-  {
-    number: "01",
-    title: "Registration",
-    description: "Complete your EZ Life membership registration.",
-    icon: UserPlus,
-  },
-  {
-    number: "02",
-    title: "Verification",
-    description: "Your profile and submitted documents are verified.",
-    icon: BadgeCheck,
-  },
-  {
-    number: "03",
-    title: "Monthly Installments",
-    description: "Stay active by maintaining your monthly contributions.",
-    icon: CreditCard,
-  },
-  {
-    number: "04",
-    title: "Balloting",
-    description: "Eligible members become part of the transparent balloting process.",
-    icon: ClipboardCheck,
-  },
-  {
-    number: "05",
-    title: "Winner Announcement",
-    description: "Selected members are announced according to the official process.",
-    icon: Trophy,
-  },
-  {
-    number: "06",
-    title: "Service Delivery",
-    description: "The selected member proceeds towards the chosen service.",
-    icon: Gift,
-  },
+const stages = [
+  { title: "Package Rules", description: "Each package defines its own payment, referral and eligibility conditions.", icon: ListChecks },
+  { title: "Eligibility Review", description: "The system checks KYC, purchase, payment and referral progress.", icon: BadgeCheck },
+  { title: "Balloting Pool", description: "Only eligible members are included in the relevant event pool.", icon: Target },
+  { title: "Result & Completion", description: "Winners and target-completed members move to the next service stage.", icon: Trophy },
 ];
 
 export default function BallotingSection() {
   return (
-    <section
-      id="balloting"
-      className="bg-[#0B1222] py-24"
-    >
-      <div className="mx-auto max-w-7xl px-6">
-
-        <div className="text-center">
-
-          <p className="font-semibold uppercase tracking-[0.2em] text-violet-400">
-            Balloting Process
-          </p>
-
-          <h2 className="mt-4 text-5xl font-black text-white">
-            Transparent Selection Journey
-          </h2>
-
-          <p className="mx-auto mt-6 max-w-3xl text-slate-400">
-            Every member follows the same structured process from registration
-            to the final service allocation.
-          </p>
-
-        </div>
-
-        <div className="relative mt-20">
-
-          <div className="absolute left-1/2 top-0 hidden h-full w-1 -translate-x-1/2 bg-gradient-to-b from-[#6D3BFF] to-[#172B63] lg:block"></div>
-
-          <div className="grid gap-10">
-
-            {steps.map((step) => {
-
-              const Icon = step.icon;
-
-              return (
-
-                <div
-                  key={step.number}
-                  className="relative rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl lg:w-[48%] odd:mr-auto even:ml-auto"
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#6D3BFF] to-[#172B63] text-white">
-                      <Icon size={25} />
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-bold text-violet-300">
-                        STEP {step.number}
-                      </p>
-
-                      <h3 className="text-2xl font-bold text-white">
-                        {step.title}
-                      </h3>
-                    </div>
-
-                  </div>
-
-                  <p className="mt-6 leading-7 text-slate-400">
-                    {step.description}
-                  </p>
-
-                </div>
-
-              );
-
-            })}
-
-          </div>
-
-        </div>
-
-      </div>
+    <section id="balloting" className="bg-[#F8FAFF] py-20 text-slate-900 sm:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8"><div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+        <div><p className="text-sm font-black uppercase tracking-[0.2em] text-violet-700">Balloting Process</p><h2 className="mt-4 text-4xl font-black leading-tight sm:text-5xl">Eligibility is based on actual package rules.</h2><p className="mt-5 leading-8 text-slate-600">Balloting is not a fixed one-rule process. Each active package can have its own referral start target, payment conditions and completion target.</p><div className="mt-7 rounded-2xl border border-violet-200 bg-violet-50 p-5"><div className="flex gap-3"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-violet-700" /><p className="leading-7 text-slate-700">Members can view what is complete, what is pending and how many referrals remain for the selected package.</p></div></div></div>
+        <div className="grid gap-4 sm:grid-cols-2">{stages.map((stage,index)=>{const Icon=stage.icon;return <article key={stage.title} className="rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#172B63] to-[#6D3BFF] text-white"><Icon className="h-5 w-5" /></div><span className="text-xs font-black text-violet-700">0{index+1}</span></div><h3 className="mt-5 text-lg font-black">{stage.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{stage.description}</p></article>})}</div>
+      </div></div>
     </section>
   );
 }
