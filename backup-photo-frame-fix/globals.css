@@ -330,35 +330,3 @@ section {
   }
 }
 /* EZLIFE_1366_STANDARD_END */
-
-/* EZLIFE_CLEAN_PHOTO_FRAME_START */
-#about img.object-cover,
-#why-ez-life img.object-cover,
-#how-it-works img.object-cover,
-#referral img.object-cover,
-#balloting img.object-cover,
-#partnership img.object-cover {
-  transform: scale(1.16);
-  transform-origin: center center;
-}
-
-#about > div,
-#why-ez-life > div,
-#how-it-works > div,
-#referral > div,
-#balloting > div,
-#partnership > div {
-  max-width: 1180px;
-}
-
-@media (max-width: 1023px) {
-  #about img.object-cover,
-  #why-ez-life img.object-cover,
-  #how-it-works img.object-cover,
-  #referral img.object-cover,
-  #balloting img.object-cover,
-  #partnership img.object-cover {
-    transform: scale(1.12);
-  }
-}
-/* EZLIFE_CLEAN_PHOTO_FRAME_END */
