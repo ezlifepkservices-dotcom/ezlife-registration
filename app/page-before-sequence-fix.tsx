@@ -22,16 +22,16 @@ export default function HomePage() {
       <HeroSection />
 
       <AnimatedSection>
-          <AboutSection />
-        </AnimatedSection>
+        <AboutSection />
+      </AnimatedSection>
 
-        <AnimatedSection>
-          <WhyEZLifeSection />
-        </AnimatedSection>
+      <AnimatedSection>
+        <ServicesSection />
+      </AnimatedSection>
 
-        <AnimatedSection>
-          <ServicesSection />
-        </AnimatedSection>
+      <AnimatedSection>
+        <WhyEZLifeSection />
+      </AnimatedSection>
 
       <AnimatedSection>
         <HowItWorksSection />
