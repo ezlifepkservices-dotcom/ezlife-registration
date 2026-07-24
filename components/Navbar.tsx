@@ -2,144 +2,110 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, ArrowUpRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 
-const navigationItems = [
-  { label: "Home", href: "/" },
-  { label: "About", href: "#about" },
-  { label: "Why EZ Life", href: "#why-ez-life" },
-  { label: "Services", href: "#services" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Contact", href: "#contact" },
+const links = [
+  ["Home", "/"],
+  ["About", "/#about"],
+  ["Why EZ Life", "/#why-ez-life"],
+  ["Services", "/#services"],
+  ["How It Works", "/#how-it-works"],
+  ["Referral", "/#referral"],
+  ["Balloting", "/#balloting"],
+  ["Partnership", "/#partnership"],
 ];
 
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = isMenuOpen ? "hidden" : "";
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isMenuOpen]);
-
-  const closeMenu = () => setIsMenuOpen(false);
+  const [open, setOpen] = useState(false);
 
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "border-b border-white/10 bg-[#0F172A]/85 backdrop-blur-xl"
-          : "bg-transparent"
-      }`}
-    >
-      <nav className="mx-auto flex h-28 max-w-7xl items-center justify-between px-6">
-        <Link
-          href="/"
-          onClick={closeMenu}
-          className="flex items-center gap-4"
-        >
-          <div className="relative h-24 w-24 shrink-0">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#08101F]/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-3">
+          <div className="relative h-14 w-14 shrink-0">
             <Image
               src="/ezlife-logo.png"
               alt="EZ Life logo"
               fill
               priority
-              sizes="96px"
+              sizes="56px"
               className="object-contain"
             />
           </div>
-
           <div>
-            <h2 className="text-2xl font-bold text-white">EZ Life</h2>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-violet-200">
+            <p className="text-xl font-black text-white">EZ Life</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-violet-300">
               Empowering Possibilities
             </p>
           </div>
         </Link>
 
-        <div className="hidden items-center gap-6 xl:flex">
-          {navigationItems.map((item) => (
+        <nav className="hidden items-center gap-6 xl:flex">
+          {links.map(([label, href]) => (
             <Link
-              key={item.label}
-              href={item.href}
-              className="text-sm font-medium text-slate-300 transition hover:text-white"
+              key={label}
+              href={href}
+              className="text-sm font-semibold text-slate-300 transition hover:text-white"
             >
-              {item.label}
+              {label}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        <div className="hidden items-center gap-3 xl:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <Link
             href="/login"
-            className="rounded-full px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+            className="rounded-xl border border-white/15 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/5"
           >
             Login
           </Link>
-
           <Link
             href="/register"
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] px-5 py-2.5 text-sm font-semibold text-white"
+            className="rounded-xl bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] px-5 py-3 text-sm font-black text-white shadow-lg transition hover:-translate-y-0.5"
           >
             Join EZ Life
-            <ArrowUpRight size={16} />
           </Link>
         </div>
 
         <button
           type="button"
-          onClick={() => setIsMenuOpen((current) => !current)}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="rounded-xl border border-white/10 bg-white/5 p-3 text-white xl:hidden"
+          onClick={() => setOpen((value) => !value)}
+          aria-label="Toggle navigation"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white lg:hidden"
         >
-          {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-      </nav>
+      </div>
 
-      {isMenuOpen && (
-        <div className="border-t border-white/10 bg-[#0F172A] xl:hidden">
-          <div className="flex flex-col px-6 py-5">
-            {navigationItems.map((item) => (
+      {open && (
+        <div className="border-t border-white/10 bg-[#08101F] px-5 py-5 lg:hidden">
+          <div className="flex flex-col gap-2">
+            {links.map(([label, href]) => (
               <Link
-                key={item.label}
-                href={item.href}
-                onClick={closeMenu}
-                className="py-3 text-white"
+                key={label}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="rounded-xl px-4 py-3 font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
               >
-                {item.label}
+                {label}
               </Link>
             ))}
 
-            <Link
-              href="/login"
-              onClick={closeMenu}
-              className="mt-4 rounded-xl border border-white/10 py-3 text-center text-white"
-            >
-              Login
-            </Link>
-
-            <Link
-              href="/register"
-              onClick={closeMenu}
-              className="mt-3 rounded-xl bg-gradient-to-r from-[#6D3BFF] to-[#8C5CFF] py-3 text-center font-semibold text-white"
-            >
-              Join EZ Life
-            </Link>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Link
+                href="/login"
+                className="rounded-xl border border-white/15 px-4 py-3 text-center font-bold text-white"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-xl bg-violet-600 px-4 py-3 text-center font-black text-white"
+              >
+                Join
+              </Link>
+            </div>
           </div>
         </div>
       )}

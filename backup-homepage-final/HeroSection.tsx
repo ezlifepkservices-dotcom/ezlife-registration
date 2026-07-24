@@ -76,12 +76,18 @@ export default function HeroSection() {
       <div className="relative z-20 mx-auto -mt-10 max-w-7xl px-5 pb-10 sm:px-6 lg:px-8">
         <div className="grid gap-3 rounded-[1.75rem] border border-white/10 bg-[#111827]/95 p-4 shadow-2xl backdrop-blur-xl sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {benefits.map(([title, description, Icon]) => (
-            <article key={title} className="rounded-2xl p-4 transition hover:bg-white/5">
+            <article
+              key={title}
+              className="rounded-2xl p-4 transition hover:bg-white/5"
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
                 <Icon className="h-5 w-5" />
               </div>
+
               <h3 className="mt-3 text-sm font-black text-white">{title}</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-400">{description}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                {description}
+              </p>
             </article>
           ))}
         </div>
