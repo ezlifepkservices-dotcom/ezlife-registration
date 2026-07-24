@@ -362,26 +362,3 @@ section {
   }
 }
 /* EZLIFE_CLEAN_PHOTO_FRAME_END */
-
-/* EZLIFE_FINAL_CLOSEOUT_START */
-html,
-body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-body {
-  min-width: 320px;
-}
-
-section {
-  scroll-margin-top: 80px;
-}
-
-@media (min-width: 1024px) and (max-height: 820px) {
-  section {
-    scroll-margin-top: 76px;
-  }
-}
-/* EZLIFE_FINAL_CLOSEOUT_END */
